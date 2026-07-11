@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Track Start Timer</title>
+<style>
+  :root{
+    --bg:#101418; --panel:#1a2027; --line:#2b333d;
+    --fg:#f4f6f8; --muted:#93a0ad;
+    --accent:#ff3b30; --accent-ink:#ffffff;
+    --lane:rgba(255,255,255,.45);
+  }
+  body[data-theme="ocean"]  { --bg:#081826; --panel:#0f2438; --line:#1d3a55; --accent:#38bdf8; --accent-ink:#04121f; }
+  body[data-theme="field"]  { --bg:#0a1f14; --panel:#11301f; --line:#1e4a31; --accent:#34d399; --accent-ink:#04160d; }
+  body[data-theme="sunset"] { --bg:#1b0f1e; --panel:#2a1730; --line:#43254c; --accent:#fb923c; --accent-ink:#20100a; }
+  body[data-theme="daylight"]{ --bg:#f4f6fb; --panel:#ffffff; --line:#d7dce8; --fg:#101828; --muted:#5b6474;
+                               --accent:#dc2626; --accent-ink:#ffffff; --lane:rgba(16,24,40,.35); }
+
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{
+    margin:0; background:var(--bg); color:var(--fg);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height:100vh; min-height:100dvh;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden; touch-action:manipulation;
+    transition:background .3s ease;
+  }
+  @keyframes flashBg{ 0%{ background:var(--accent); } 100%{ background:var(--bg); } }
+  body.flash{ animation:flashBg .55s ease-out; }
+
+  /* lane lines — the start line at the bottom of the screen */
+  #lanes{
+    position:fixed; left:0; right:0; bottom:0; height:58px;
+    pointer-events:none; opacity:.5;
+    border-top:3px solid var(--lane);
+    background:repeating-linear-gradient(90deg,
+      transparent 0 calc(12.5% - 3px),
+      var(--lane) calc(12.5% - 3px) 12.5%);
+  }
+
+  main{
+    display:flex; flex-direction:column; align-items:center; gap:14px;
+    padding:20px 16px 90px; width:100%; max-width:560px; text-align:center;
+  }
+  #eyebrow{
+    font-size:.8rem; font-weight:700; letter-spacing:.28em; text-transform:uppercase;
+    color:var(--muted);
+  }
+  #phase{
+    font-size:clamp(2.4rem, 11vw, 4.6rem); font-weight:900; line-height:1.05;
+    letter-spacing:.03em; text-transform:uppercase; min-height:1.1em;
+  }
+  #phase.go{ color:var(--accent); }
+  #sub{
+    font-size:clamp(1rem, 4vw, 1.3rem); color:var(--muted); min-height:1.4em;
+    font-variant-numeric:tabular-nums;
+  }
+
+  #startBtn{
+    width:min(76vw, 52vh, 400px); aspect-ratio:1; border-radius:50%;
+    border:none; cursor:pointer;
+    background:var(--accent); color:var(--accent-ink);
+    font-family:inherit; font-size:clamp(2.2rem, 9vw, 3.6rem); font-weight:900; letter-spacing:.06em;
+    box-shadow:0 14px 44px rgba(0,0,0,.45);
+    transition:transform .08s ease;
+  }
+  #startBtn:active{ transform:scale(.96); }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 14px 44px rgba(0,0,0,.45), 0 0 0 0 rgba(255,255,255,.0); }
+    50%   { box-shadow:0 14px 44px rgba(0,0,0,.45), 0 0 0 14px rgba(255,255,255,.06); }
+  }
+  #startBtn.pulse{ animation:pulse 2.4s ease-in-out infinite; }
+
+  #cancelBtn{
+    display:none; margin-top:8px; padding:16px 40px; border-radius:999px;
+    background:transparent; color:var(--fg); border:2px solid var(--line);
+    font-family:inherit; font-size:1.15rem; font-weight:700; cursor:pointer;
+  }
+  #cancelBtn:active{ background:var(--panel); }
+  body.running #startBtn{ display:none; }
+  body.running #cancelBtn{ display:inline-block; }
+  body.running #configLine{ visibility:hidden; }
+
+  #configLine{ font-size:.85rem; color:var(--muted); line-height:1.5; max-width:40ch; }
+
+  /* settings trigger */
+  #settingsBtn{
+    position:fixed; top:calc(14px + env(safe-area-inset-top)); right:14px; z-index:30;
+    width:52px; height:52px; border-radius:50%;
+    background:var(--panel); color:var(--fg); border:1px solid var(--line);
+    font-size:1.4rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  #settingsBtn:disabled{ opacity:.35; }
+
+  /* settings panel */
+  #overlay{
+    position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:40;
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  #panel{
+    position:fixed; top:0; right:0; bottom:0; z-index:50;
+    width:min(380px, 94vw); background:var(--panel); border-left:1px solid var(--line);
+    transform:translateX(105%); transition:transform .28s ease;
+    overflow-y:auto; padding:18px 20px calc(28px + env(safe-area-inset-bottom));
+  }
+  body.settings-open #overlay{ opacity:1; pointer-events:auto; }
+  body.settings-open #panel{ transform:translateX(0); }
+
+  .panel-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; }
+  .panel-head h2{ margin:0; font-size:1.25rem; font-weight:900; letter-spacing:.02em; }
+  #closeBtn{
+    width:44px; height:44px; border-radius:50%; border:1px solid var(--line);
+    background:transparent; color:var(--fg); font-size:1.1rem; cursor:pointer;
+  }
+  #panel section{ border-top:1px solid var(--line); padding:16px 0; }
+  #panel h3{
+    margin:0 0 10px; font-size:.75rem; font-weight:800; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--muted);
+  }
+  #panel label{ display:block; font-size:.95rem; font-weight:600; margin:10px 0 4px; }
+  #panel label span{ color:var(--muted); font-weight:600; font-variant-numeric:tabular-nums; }
+  .hint{ font-size:.82rem; color:var(--muted); margin:6px 0 0; line-height:1.45; }
+  input[type=range]{ width:100%; accent-color:var(--accent); height:32px; }
+  .row{ display:flex; gap:10px; align-items:center; }
+  select{
+    flex:1; padding:12px; font-size:1rem; font-family:inherit;
+    background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:10px;
+  }
+  .btn{
+    padding:12px 18px; border-radius:10px; border:1px solid var(--line);
+    background:var(--bg); color:var(--fg); font-family:inherit; font-size:.95rem; font-weight:700; cursor:pointer;
+  }
+  .btn:active{ background:var(--line); }
+  .switch{ display:flex; align-items:center; gap:10px; font-size:.95rem; font-weight:600; }
+  .switch input{ width:22px; height:22px; accent-color:var(--accent); }
+  #themes{ display:flex; gap:12px; flex-wrap:wrap; }
+  .swatch{
+    width:46px; height:46px; border-radius:50%; cursor:pointer;
+    border:3px solid transparent; padding:0;
+  }
+  .swatch.active{ border-color:var(--fg); }
+  #resetBtn{ width:100%; margin-top:14px; }
+
+  :focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce){
+    #startBtn.pulse{ animation:none; }
+    body.flash{ animation:none; }
+    #panel, #overlay{ transition:none; }
+  }
+</style>
+</head>
+<body data-theme="track">
+
+<button id="settingsBtn" aria-label="Settings">⚙</button>
+
+<main>
+  <div id="eyebrow">Starter · Ready</div>
+  <div id="phase" role="status" aria-live="polite"></div>
+  <div id="sub"></div>
+  <button id="startBtn" class="pulse">START</button>
+  <button id="cancelBtn">Cancel</button>
+  <div id="configLine"></div>
+</main>
+
+<div id="lanes" aria-hidden="true"></div>
+
+<div id="overlay"></div>
+<aside id="panel" aria-label="Settings">
+  <div class="panel-head">
+    <h2>Settings</h2>
+    <button id="closeBtn" aria-label="Close settings">✕</button>
+  </div>
+
+  <section>
+    <h3>Sound</h3>
+    <label for="vol">Volume <span id="volVal"></span></label>
+    <input type="range" id="vol" min="0" max="100" step="5">
+    <label for="soundSel">Start signal</label>
+    <div class="row">
+      <select id="soundSel"></select>
+      <button class="btn" id="testBtn">Test</button>
+    </div>
+  </section>
+
+  <section>
+    <h3>Timing</h3>
+    <p class="hint" style="margin-top:0">A random time inside each range is drawn every start, so no one can predict the gun. Set min = max for a fixed delay.</p>
+    <label>“On your marks” → “Set” <span id="marksVal"></span></label>
+    <input type="range" id="marksMin" min="1" max="15" step="0.5" aria-label="Marks to set, minimum seconds">
+    <input type="range" id="marksMax" min="1" max="15" step="0.5" aria-label="Marks to set, maximum seconds">
+    <label>“Set” → start signal <span id="setVal"></span></label>
+    <input type="range" id="setMin" min="0.5" max="8" step="0.1" aria-label="Set to start, minimum seconds">
+    <input type="range" id="setMax" min="0.5" max="8" step="0.1" aria-label="Set to start, maximum seconds">
+    <p class="hint">Real officials typically fire about 1.5–2.5 s after “Set” — that’s the default range.</p>
+  </section>
+
+  <section>
+    <h3>Head start</h3>
+    <label class="switch"><input type="checkbox" id="hsToggle"> Second, delayed start signal</label>
+    <div id="hsGapRow">
+      <label for="hsGap">Head start gap <span id="hsVal"></span></label>
+      <input type="range" id="hsGap" min="0.5" max="30" step="0.5">
+      <p class="hint">First signal starts runner 1; the second signal starts runner 2 after the gap.</p>
+    </div>
+  </section>
+
+  <section>
+    <h3>Appearance</h3>
+    <div id="themes"></div>
+  </section>
+
+  <button class="btn" id="resetBtn">Reset to defaults</button>
+</aside>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- settings ---------- */
+  const DEFAULTS = {
+    volume: 0.85, theme: "track", sound: "bang",
+    marksMin: 4, marksMax: 7,
+    setMin: 1.5, setMax: 2.6,
+    headStart: false, headGap: 3
+  };
+  let S = Object.assign({}, DEFAULTS);
+
+  async function loadSettings(){
+    try{
+      if(!window.storage) return;
+      const r = await window.storage.get("track-timer-settings");
+      if(r && r.value) Object.assign(S, JSON.parse(r.value));
+    }catch(e){ /* first run or storage unavailable — in-memory defaults are fine */ }
+  }
+  let saveT = null;
+  function saveSettings(){
+    clearTimeout(saveT);
+    saveT = setTimeout(async function(){
+      try{ if(window.storage) await window.storage.set("track-timer-settings", JSON.stringify(S)); }
+      catch(e){ /* ignore — settings still work for this session */ }
+    }, 400);
+  }
+
+  /* ---------- audio engine (all sounds synthesized, no files) ---------- */
+  const AC = window.AudioContext || window.webkitAudioContext;
+  let actx = null;
+  function audio(){
+    if(!actx && AC) actx = new AC();
+    if(actx && actx.state === "suspended") actx.resume();
+    return actx;
+  }
+  function vol(){ return S.volume; }
+
+  function tone(opt){
+    const c = audio(); if(!c) return;
+    const t = c.currentTime + (opt.when || 0);
+    const dur = opt.dur || 0.5;
+    const o = c.createOscillator();
+    o.type = opt.type || "sine";
+    o.frequency.setValueAtTime(opt.freq || 440, t);
+    if(opt.glideTo) o.frequency.exponentialRampToValueAtTime(Math.max(opt.glideTo, 1), t + dur * 0.9);
+    const g = c.createGain();
+    const peak = Math.max((opt.peak || 1) * vol(), 0.0001);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(peak, t + (opt.attack || 0.01));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    let node = o;
+    if(opt.filter){
+      const f = c.createBiquadFilter();
+      f.type = opt.filter.type; f.frequency.value = opt.filter.freq;
+      if(opt.filter.q) f.Q.value = opt.filter.q;
+      node.connect(f); node = f;
+    }
+    node.connect(g); g.connect(c.destination);
+    if(opt.lfo){
+      const l = c.createOscillator();
+      l.type = opt.lfo.type || "sine"; l.frequency.value = opt.lfo.rate;
+      const lg = c.createGain(); lg.gain.value = opt.lfo.depth;
+      l.connect(lg); lg.connect(o.frequency);
+      l.start(t); l.stop(t + dur + 0.05);
+    }
+    o.start(t); o.stop(t + dur + 0.05);
+  }
+
+  function noiseBurst(opt){
+    const c = audio(); if(!c) return;
+    const t = c.currentTime;
+    const dur = opt.dur || 0.4;
+    const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i = 0; i < d.length; i++){
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, opt.decayPow || 2.5);
+    }
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = "lowpass";
+    f.frequency.setValueAtTime(opt.filterFrom || 8000, t);
+    f.frequency.exponentialRampToValueAtTime(opt.filterTo || 400, t + dur);
+    const g = c.createGain(); g.gain.setValueAtTime((opt.peak || 1) * vol(), t);
+    src.connect(f); f.connect(g); g.connect(c.destination);
+    src.start(t);
+  }
+
+  function speak(text, opt){
+    opt = opt || {};
+    if(!("speechSynthesis" in window)) return;
+    try{
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = opt.rate || 1; u.pitch = opt.pitch || 1; u.volume = vol();
+      speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
+  const SOUNDS = {
+    bang:    { label: "🔫 Gun bang", play: function(){
+                 audio(); noiseBurst({ dur: .45, peak: 1, filterFrom: 9000, filterTo: 300, decayPow: 2.6 });
+                 tone({ freq: 160, glideTo: 45, dur: .3, type: "sine", peak: .9, attack: .005 });
+               } },
+    horn:    { label: "📢 Loud horn", play: function(){
+                 tone({ freq: 850, dur: .6, type: "square", peak: .6, attack: .005 });
+                 tone({ freq: 1700, dur: .6, type: "sine", peak: .15, attack: .005 });
+               } },
+    voice:   { label: "🗣️ “Go!”", play: function(){ speak("Go!", { pitch: 1.15, rate: 1 }); } },
+    airhorn: { label: "🎉 Air horn", play: function(){
+                 [233, 466, 699].forEach(function(f, i){
+                   tone({ freq: f * 1.003, dur: 1.1, type: "sawtooth", peak: .3, attack: .06,
+                          filter: { type: "lowpass", freq: 2500 },
+                          lfo: i === 1 ? { rate: 6, depth: 4 } : null });
+                 });
+               } },
+    quack:   { label: "🦆 Duck quack", play: function(){
+                 tone({ freq: 320, glideTo: 190, dur: .14, type: "sawtooth", peak: .9,
+                        filter: { type: "bandpass", freq: 1100, q: 6 } });
+                 tone({ freq: 320, glideTo: 190, dur: .14, type: "sawtooth", peak: .9, when: .18,
+                        filter: { type: "bandpass", freq: 1100, q: 6 } });
+               } },
+    boing:   { label: "🤪 Cartoon boing", play: function(){
+                 tone({ freq: 620, glideTo: 65, dur: .8, type: "sine", peak: .8,
+                        lfo: { rate: 12, depth: 35 } });
+               } },
+    goat:    { label: "🐐 Goat bleat", play: function(){
+                 tone({ freq: 560, dur: .9, type: "sawtooth", peak: .65,
+                        filter: { type: "bandpass", freq: 900, q: 2 },
+                        lfo: { type: "square", rate: 26, depth: 130 } });
+               } },
+    yeehaw:  { label: "🤠 “Yeehaw!”", play: function(){ speak("Yeehaw!", { pitch: 1.9, rate: 1.15 }); } }
+  };
+
+  /* ---------- sequence ---------- */
+  let running = false;
+  let timeouts = [];
+  let intervals = [];
+  function schedule(fn, ms){ timeouts.push(setTimeout(fn, ms)); }
+  function clearAllTimers(){
+    timeouts.forEach(clearTimeout); timeouts = [];
+    intervals.forEach(clearInterval); intervals = [];
+    if("speechSynthesis" in window){ try{ speechSynthesis.cancel(); }catch(e){} }
+  }
+  function rand(min, max){ return min + Math.random() * (max - min); }
+
+  const body = document.body;
+  const el = function(id){ return document.getElementById(id); };
+  const eyebrow = el("eyebrow"), phaseEl = el("phase"), subEl = el("sub");
+  const startBtn = el("startBtn"), cancelBtn = el("cancelBtn"), settingsBtn = el("settingsBtn");
+  const configLine = el("configLine");
+
+  function setPhase(text, sub, isGo){
+    phaseEl.textContent = text;
+    phaseEl.classList.toggle("go", !!isGo);
+    subEl.textContent = sub || "";
+  }
+  function flash(){
+    body.classList.remove("flash");
+    void body.offsetWidth; /* restart animation */
+    body.classList.add("flash");
+  }
+  function setRunningUI(on){
+    running = on;
+    body.classList.toggle("running", on);
+    settingsBtn.disabled = on;
+    eyebrow.textContent = on ? "Sequence running" : "Starter · Ready";
+    if(!on) setPhase("", "");
+  }
+
+  function startSequence(){
+    if(running) return;
+    audio(); /* unlock sound on this user tap */
+    setRunningUI(true);
+    setPhase("On your marks", "Take your positions");
+    speak("On your marks");
+    schedule(function(){
+      setPhase("Set", "");
+      speak("Set");
+      schedule(fire, rand(S.setMin, S.setMax) * 1000);
+    }, rand(S.marksMin, S.marksMax) * 1000);
+  }
+
+  function fire(){
+    flash();
+    SOUNDS[S.sound].play();
+    if(S.headStart){
+      setPhase("GO!", "", true);
+      const gap = S.headGap * 1000;
+      const t0 = performance.now();
+      const iv = setInterval(function(){
+        const remain = Math.max(0, gap - (performance.now() - t0)) / 1000;
+        subEl.textContent = "Second start in " + remain.toFixed(1) + " s";
+      }, 50);
+      intervals.push(iv);
+      schedule(function(){
+        clearInterval(iv);
+        flash();
+        SOUNDS[S.sound].play();
+        setPhase("GO!", "Second runner away", true);
+        schedule(function(){ setRunningUI(false); }, 1800);
+      }, gap);
+    }else{
+      setPhase("GO!", "", true);
+      schedule(function(){ setRunningUI(false); }, 1800);
+    }
+  }
+
+  function cancelSequence(){
+    clearAllTimers();
+    setRunningUI(false);
+  }
+
+  startBtn.addEventListener("click", startSequence);
+  cancelBtn.addEventListener("click", cancelSequence);
+
+  /* ---------- settings UI ---------- */
+  const overlay = el("overlay"), panel = el("panel");
+  function openPanel(){ body.classList.add("settings-open"); }
+  function closePanel(){ body.classList.remove("settings-open"); }
+  settingsBtn.addEventListener("click", openPanel);
+  el("closeBtn").addEventListener("click", closePanel);
+  overlay.addEventListener("click", closePanel);
+
+  /* sound select */
+  const soundSel = el("soundSel");
+  Object.keys(SOUNDS).forEach(function(key){
+    const o = document.createElement("option");
+    o.value = key; o.textContent = SOUNDS[key].label;
+    soundSel.appendChild(o);
+  });
+  soundSel.addEventListener("change", function(){
+    S.sound = soundSel.value; saveSettings(); updateConfigLine();
+  });
+  el("testBtn").addEventListener("click", function(){
+    audio(); SOUNDS[S.sound].play();
+  });
+
+  /* volume */
+  const volIn = el("vol"), volVal = el("volVal");
+  volIn.addEventListener("input", function(){
+    S.volume = volIn.value / 100;
+    volVal.textContent = volIn.value + "%";
+    saveSettings();
+  });
+
+  /* timing ranges */
+  const marksMinIn = el("marksMin"), marksMaxIn = el("marksMax"), marksVal = el("marksVal");
+  const setMinIn = el("setMin"), setMaxIn = el("setMax"), setVal = el("setVal");
+
+  function fmtRange(a, b){
+    a = +a; b = +b;
+    return a === b ? a + " s (fixed)" : a + "–" + b + " s";
+  }
+  function refreshTimingLabels(){
+    marksVal.textContent = fmtRange(S.marksMin, S.marksMax);
+    setVal.textContent = fmtRange(S.setMin, S.setMax);
+  }
+  function bindPair(minIn, maxIn, keyMin, keyMax){
+    minIn.addEventListener("input", function(){
+      S[keyMin] = +minIn.value;
+      if(S[keyMin] > S[keyMax]){ S[keyMax] = S[keyMin]; maxIn.value = S[keyMax]; }
+      refreshTimingLabels(); updateConfigLine(); saveSettings();
+    });
+    maxIn.addEventListener("input", function(){
+      S[keyMax] = +maxIn.value;
+      if(S[keyMax] < S[keyMin]){ S[keyMin] = S[keyMax]; minIn.value = S[keyMin]; }
+      refreshTimingLabels(); updateConfigLine(); saveSettings();
+    });
+  }
+  bindPair(marksMinIn, marksMaxIn, "marksMin", "marksMax");
+  bindPair(setMinIn, setMaxIn, "setMin", "setMax");
+
+  /* head start */
+  const hsToggle = el("hsToggle"), hsGapIn = el("hsGap"), hsVal = el("hsVal"), hsGapRow = el("hsGapRow");
+  hsToggle.addEventListener("change", function(){
+    S.headStart = hsToggle.checked;
+    hsGapRow.style.opacity = S.headStart ? 1 : .4;
+    updateConfigLine(); saveSettings();
+  });
+  hsGapIn.addEventListener("input", function(){
+    S.headGap = +hsGapIn.value;
+    hsVal.textContent = S.headGap.toFixed(1) + " s";
+    updateConfigLine(); saveSettings();
+  });
+
+  /* themes */
+  const THEMES = {
+    track:    "#ff3b30",
+    ocean:    "#38bdf8",
+    field:    "#34d399",
+    sunset:   "#fb923c",
+    daylight: "#f4f6fb"
+  };
+  const themesWrap = el("themes");
+  Object.keys(THEMES).forEach(function(name){
+    const b = document.createElement("button");
+    b.className = "swatch"; b.dataset.theme = name;
+    b.setAttribute("aria-label", name + " theme");
+    b.style.background = THEMES[name];
+    if(name === "daylight") b.style.boxShadow = "inset 0 0 0 2px #c3c9d6";
+    b.addEventListener("click", function(){
+      S.theme = name; applyTheme(); saveSettings();
+    });
+    themesWrap.appendChild(b);
+  });
+  function applyTheme(){
+    body.dataset.theme = S.theme;
+    themesWrap.querySelectorAll(".swatch").forEach(function(s){
+      s.classList.toggle("active", s.dataset.theme === S.theme);
+    });
+  }
+
+  /* reset */
+  el("resetBtn").addEventListener("click", function(){
+    S = Object.assign({}, DEFAULTS);
+    syncInputs(); applyTheme(); updateConfigLine(); saveSettings();
+  });
+
+  /* config summary on the main screen */
+  function updateConfigLine(){
+    let txt = "Marks → Set: " + fmtRange(S.marksMin, S.marksMax) +
+              "  ·  Set → " + SOUNDS[S.sound].label.replace(/^[^ ]+ /, "") + ": " + fmtRange(S.setMin, S.setMax);
+    if(S.headStart) txt += "  ·  2nd signal +" + S.headGap.toFixed(1) + " s";
+    configLine.textContent = txt;
+  }
+
+  function syncInputs(){
+    volIn.value = Math.round(S.volume * 100);
+    volVal.textContent = volIn.value + "%";
+    soundSel.value = S.sound;
+    marksMinIn.value = S.marksMin; marksMaxIn.value = S.marksMax;
+    setMinIn.value = S.setMin;     setMaxIn.value = S.setMax;
+    hsToggle.checked = S.headStart;
+    hsGapIn.value = S.headGap;
+    hsVal.textContent = S.headGap.toFixed(1) + " s";
+    hsGapRow.style.opacity = S.headStart ? 1 : .4;
+    refreshTimingLabels();
+  }
+
+  /* ---------- init ---------- */
+  loadSettings().then(function(){
+    syncInputs(); applyTheme(); updateConfigLine();
+  });
+})();
+</script>
+</body>
+</html>

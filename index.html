@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Track Start Timer</title>
+
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#101418">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Start Timer">
+
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body data-theme="track">
+
+<button id="settingsBtn" aria-label="Settings">⚙</button>
+
+<main>
+  <div id="eyebrow">Starter · Ready</div>
+  <div id="phase" role="status" aria-live="polite"></div>
+  <div id="sub"></div>
+  <button id="startBtn" class="pulse">START</button>
+  <button id="cancelBtn">Cancel</button>
+  <div id="configLine"></div>
+</main>
+
+<div id="lanes" aria-hidden="true"></div>
+
+<div id="overlay"></div>
+<aside id="panel" aria-label="Settings">
+  <div class="panel-head">
+    <h2>Settings</h2>
+    <button id="closeBtn" aria-label="Close settings">✕</button>
+  </div>
+
+  <section>
+    <h3>Sound</h3>
+    <label for="vol">Volume <span id="volVal"></span></label>
+    <input type="range" id="vol" min="0" max="100" step="5">
+    <label for="soundSel">Start signal</label>
+    <div class="row">
+      <select id="soundSel"></select>
+      <button class="btn" id="testBtn">Test</button>
+    </div>
+  </section>
+
+  <section>
+    <h3>Timing</h3>
+    <p class="hint" style="margin-top:0">A random time inside each range is drawn every start, so no one can predict the gun. Set min = max for a fixed delay.</p>
+    <label>“On your marks” → “Set” <span id="marksVal"></span></label>
+    <input type="range" id="marksMin" min="1" max="15" step="0.5" aria-label="Marks to set, minimum seconds">
+    <input type="range" id="marksMax" min="1" max="15" step="0.5" aria-label="Marks to set, maximum seconds">
+    <label>“Set” → start signal <span id="setVal"></span></label>
+    <input type="range" id="setMin" min="0.5" max="8" step="0.1" aria-label="Set to start, minimum seconds">
+    <input type="range" id="setMax" min="0.5" max="8" step="0.1" aria-label="Set to start, maximum seconds">
+    <p class="hint">Real officials typically fire about 1.5–2.5 s after “Set” — that’s the default range.</p>
+  </section>
+
+  <section>
+    <h3>Head start</h3>
+    <label class="switch"><input type="checkbox" id="hsToggle"> Second, delayed start signal</label>
+    <div id="hsGapRow">
+      <label for="hsGap">Head start gap <span id="hsVal"></span></label>
+      <input type="range" id="hsGap" min="0.5" max="30" step="0.5">
+      <p class="hint">First signal starts runner 1; the second signal starts runner 2 after the gap.</p>
+    </div>
+  </section>
+
+  <section>
+    <h3>Appearance</h3>
+    <div id="themes"></div>
+  </section>
+
+  <button class="btn" id="resetBtn">Reset to defaults</button>
+</aside>
+
+<script src="js/app.js"></script>
+</body>
+</html>
