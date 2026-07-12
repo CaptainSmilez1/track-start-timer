@@ -31,7 +31,7 @@ function chunk(type, data) {
 }
 
 function makeIcon(size, { maskable = false } = {}) {
-  const bg = [255, 59, 48]; // --accent (track theme)
+  const bg = [200, 69, 31]; // --accent (track theme)
   const fg = [255, 255, 255];
   const cx = size / 2, cy = size / 2;
   // Maskable icons need padding so the OS can safely crop to a circle/squircle.
