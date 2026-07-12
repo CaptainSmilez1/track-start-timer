@@ -213,7 +213,7 @@
   function fmtNum(n){ return roundStep(n).toString(); }
   function fmtRange(a, b){
     a = +a; b = +b;
-    return a === b ? a + " s (fixed)" : a + "–" + b + " s";
+    return a === b ? a + "s" : a + "–" + b + "s";
   }
 
   /* volume */
@@ -321,12 +321,17 @@
     syncInputs(); applyTheme(); updateConfigLine(); saveSettings();
   });
 
-  /* config summary on the main screen */
+  /* config summary on the main screen — compact icon chips instead of a sentence */
+  const ICON_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6"/></svg>';
+  const ICON_SIGNAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 8 8 8 13 4 13 20 8 16 4 16 4 8"/><path d="M17 8a5 5 0 0 1 0 8"/></svg>';
+  const ICON_FLAG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18"/><path d="M5 4h11l-2.5 4L16 12H5"/></svg>';
   function updateConfigLine(){
-    let txt = "Marks → Set: " + fmtRange(S.marksMin, S.marksMax) +
-              "  ·  Set → " + SOUNDS[S.sound].label + ": " + fmtRange(S.setMin, S.setMax);
-    if(S.headStart) txt += "  ·  2nd signal +" + S.headGap.toFixed(1) + " s";
-    configLine.textContent = txt;
+    let html = '<div class="config-chips">' +
+      '<span class="config-chip">' + ICON_CLOCK + fmtRange(S.marksMin, S.marksMax) + '</span>' +
+      '<span class="config-chip">' + ICON_SIGNAL + fmtRange(S.setMin, S.setMax) + '</span>';
+    if(S.headStart) html += '<span class="config-chip">' + ICON_FLAG + '+' + fmtNum(S.headGap) + 's</span>';
+    html += '</div><div class="config-caption">' + SOUNDS[S.sound].label + '</div>';
+    configLine.innerHTML = html;
   }
 
   function syncInputs(){
