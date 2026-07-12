@@ -27,12 +27,14 @@
     }, 400);
   }
 
-  /* ---------- audio engine (real bundled files, plain <audio> playback) ----------
-     Live Web Audio oscillators turned out to be unreliable across mobile
-     browsers (autoplay/AudioContext quirks). Pre-rendered files + a plain
-     <audio> element play far more consistently. Note: a phone's hardware
-     silent/ringer switch is an OS-level thing Safari respects for web
-     audio — no purely web-based trick bypasses that reliably. */
+  /* ---------- audio engine (real bundled files, low-latency playback) ----------
+     Plain <audio>.play() has real startup latency (decode/buffering), enough
+     to be noticeable against the flash/text. Real WAV files decoded once into
+     AudioBuffers and fired via the Web Audio API's AudioBufferSourceNode give
+     near-zero-latency, sample-accurate playback instead — same bundled files,
+     just scheduled through a faster path. Note: a phone's hardware silent/
+     ringer switch is an OS-level thing Safari respects for web audio — no
+     purely web-based trick bypasses that reliably. */
   const SOUND_FILES = {
     bang: "sounds/bang.wav",
     horn: "sounds/horn.wav",
@@ -42,33 +44,44 @@
     boing: "sounds/boing.wav",
     goat: "sounds/goat.wav"
   };
-  const audioEls = {};
-  Object.keys(SOUND_FILES).forEach(function(key){
-    const a = new Audio(SOUND_FILES[key]);
-    a.preload = "auto";
-    a.setAttribute("playsinline", "");
-    audioEls[key] = a;
-  });
+  const AC = window.AudioContext || window.webkitAudioContext;
+  let actx = null;
+  const buffers = {};
+
+  function ensureContext(){
+    if(!actx && AC) actx = new AC();
+    return actx;
+  }
+  (function preloadBuffers(){
+    const c = ensureContext(); if(!c) return;
+    Object.keys(SOUND_FILES).forEach(function(key){
+      fetch(SOUND_FILES[key])
+        .then(function(res){ return res.arrayBuffer(); })
+        .then(function(arr){ return c.decodeAudioData(arr); })
+        .then(function(buf){ buffers[key] = buf; })
+        .catch(function(){ /* falls back to being silently skipped if it never loads */ });
+    });
+  })();
 
   /* perceptual (roughly logarithmic) taper — a mid slider position should
      sound meaningfully louder than "half", not barely audible */
   function vol(){ return Math.pow(S.volume, 0.55); }
 
-  let unlocked = false;
   function unlockAudio(){
-    if(unlocked) return;
-    unlocked = true;
-    Object.values(audioEls).forEach(function(a){
-      const p = a.play();
-      if(p && p.then) p.then(function(){ a.pause(); a.currentTime = 0; }).catch(function(){});
-    });
+    const c = ensureContext(); if(!c) return;
+    if(c.state === "suspended") c.resume();
   }
 
   function playFile(key){
-    const a = audioEls[key]; if(!a) return;
-    a.currentTime = 0;
-    a.volume = vol();
-    a.play().catch(function(){});
+    const c = ensureContext(); const buf = buffers[key];
+    if(!c || !buf) return;
+    if(c.state === "suspended") c.resume();
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const g = c.createGain();
+    g.gain.value = vol();
+    src.connect(g); g.connect(c.destination);
+    src.start();
   }
 
   function speak(text, opt){
@@ -144,8 +157,8 @@
   }
 
   function fire(){
-    flash();
     SOUNDS[S.sound].play();
+    flash();
     if(S.headStart){
       setPhase("GO!", "", true);
       const gap = S.headGap * 1000;
@@ -157,8 +170,8 @@
       intervals.push(iv);
       schedule(function(){
         clearInterval(iv);
-        flash();
         SOUNDS[S.sound].play();
+        flash();
         setPhase("GO!", "Second runner away", true);
         schedule(function(){ setRunningUI(false); }, 1800);
       }, gap);
