@@ -283,26 +283,27 @@
 
   /* themes */
   const THEMES = {
-    track:    "#ff3b30",
-    ocean:    "#38bdf8",
-    field:    "#34d399",
-    sunset:   "#fb923c",
-    daylight: "#f4f6fb"
+    track:    { color: "#ff3b30", label: "Track" },
+    ocean:    { color: "#38bdf8", label: "Ocean" },
+    field:    { color: "#34d399", label: "Field" },
+    sunset:   { color: "#fb923c", label: "Sunset" },
+    daylight: { color: "#f4f6fb", label: "Daylight" }
   };
   const themesWrap = el("themes");
   Object.keys(THEMES).forEach(function(name){
-    const b = document.createElement("button");
-    b.className = "swatch"; b.dataset.theme = name;
-    b.setAttribute("aria-label", name + " theme");
-    b.style.background = THEMES[name];
-    b.addEventListener("click", function(){
+    const t = THEMES[name];
+    const opt = document.createElement("button");
+    opt.className = "theme-option"; opt.dataset.theme = name;
+    opt.setAttribute("aria-label", t.label + " theme");
+    opt.innerHTML = '<span class="swatch" style="background:' + t.color + '"></span><span class="theme-name">' + t.label + "</span>";
+    opt.addEventListener("click", function(){
       S.theme = name; applyTheme(); saveSettings();
     });
-    themesWrap.appendChild(b);
+    themesWrap.appendChild(opt);
   });
   function applyTheme(){
     body.dataset.theme = S.theme;
-    themesWrap.querySelectorAll(".swatch").forEach(function(s){
+    themesWrap.querySelectorAll(".theme-option").forEach(function(s){
       s.classList.toggle("active", s.dataset.theme === S.theme);
     });
   }
