@@ -57,17 +57,23 @@
   function vol(){ return Math.pow(S.volume, 0.55); }
 
   let unlocked = false;
-  function unlockAudio(){
+  function unlockAudio(skipKey){
     if(unlocked) return;
     unlocked = true;
-    Object.values(audioEls).forEach(function(a){
+    Object.keys(audioEls).forEach(function(key){
+      if(key === skipKey) return; /* about to be played for real — let that be its own unlock */
+      const a = audioEls[key];
+      a.muted = true; /* priming plays briefly before pause() lands — mute so it's silent */
       const p = a.play();
-      if(p && p.then) p.then(function(){ a.pause(); a.currentTime = 0; }).catch(function(){});
+      const restore = function(){ a.pause(); a.currentTime = 0; a.muted = false; };
+      if(p && p.then) p.then(restore).catch(restore);
+      else restore();
     });
   }
 
   function playFile(key){
     const a = audioEls[key]; if(!a) return;
+    a.muted = false; /* clears any leftover mute from unlockAudio()'s priming pass */
     a.currentTime = 0;
     a.volume = vol();
     a.play().catch(function(){});
@@ -195,10 +201,10 @@
   });
   soundSel.addEventListener("change", function(){
     S.sound = soundSel.value; saveSettings(); updateConfigLine();
-    unlockAudio(); SOUNDS[S.sound].play();
+    unlockAudio(S.sound); SOUNDS[S.sound].play();
   });
   el("testBtn").addEventListener("click", function(){
-    unlockAudio(); SOUNDS[S.sound].play();
+    unlockAudio(S.sound); SOUNDS[S.sound].play();
   });
 
   /* ---------- stepper controls (replace fiddly sliders with tap +/-) ---------- */

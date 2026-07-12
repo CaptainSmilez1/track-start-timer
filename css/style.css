@@ -102,6 +102,7 @@ body.running #configLine{ visibility:hidden; }
 }
 #settingsBtn:active{ transform:scale(.92); }
 #settingsBtn:disabled{ opacity:.35; }
+#settingsBtn svg{ width:22px; height:22px; }
 
 /* settings panel */
 #overlay{
