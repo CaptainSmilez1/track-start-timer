@@ -85,15 +85,15 @@
   }
 
   const SOUNDS = {
-    bang:    { label: "🔫 Starter gun", play: function(){ playFile("bang"); } },
-    horn:    { label: "📢 Air horn", play: function(){ playFile("horn"); } },
-    buzzer:  { label: "🔔 Buzzer", play: function(){ playFile("buzzer"); } },
-    whistle: { label: "🎵 Whistle", play: function(){ playFile("whistle"); } },
-    voice:   { label: "🗣️ “Go!”", play: function(){ speak("Go!", { pitch: 1.15, rate: 1 }); } },
-    quack:   { label: "🦆 Duck quack", play: function(){ playFile("quack"); } },
-    boing:   { label: "🤪 Cartoon boing", play: function(){ playFile("boing"); } },
-    goat:    { label: "🐐 Goat bleat", play: function(){ playFile("goat"); } },
-    yeehaw:  { label: "🤠 “Yeehaw!”", play: function(){ speak("Yeehaw!", { pitch: 1.9, rate: 1.15 }); } }
+    bang:    { label: "Starter gun", play: function(){ playFile("bang"); } },
+    horn:    { label: "Air horn", play: function(){ playFile("horn"); } },
+    buzzer:  { label: "Buzzer", play: function(){ playFile("buzzer"); } },
+    whistle: { label: "Whistle", play: function(){ playFile("whistle"); } },
+    voice:   { label: "Voice: “Go!”", play: function(){ speak("Go!", { pitch: 1.15, rate: 1 }); } },
+    quack:   { label: "Duck quack", play: function(){ playFile("quack"); } },
+    boing:   { label: "Cartoon boing", play: function(){ playFile("boing"); } },
+    goat:    { label: "Goat bleat", play: function(){ playFile("goat"); } },
+    yeehaw:  { label: "Voice: “Yeehaw!”", play: function(){ speak("Yeehaw!", { pitch: 1.9, rate: 1.15 }); } }
   };
 
   /* ---------- sequence ---------- */
@@ -318,7 +318,7 @@
   /* config summary on the main screen */
   function updateConfigLine(){
     let txt = "Marks → Set: " + fmtRange(S.marksMin, S.marksMax) +
-              "  ·  Set → " + SOUNDS[S.sound].label.replace(/^[^ ]+ /, "") + ": " + fmtRange(S.setMin, S.setMax);
+              "  ·  Set → " + SOUNDS[S.sound].label + ": " + fmtRange(S.setMin, S.setMax);
     if(S.headStart) txt += "  ·  2nd signal +" + S.headGap.toFixed(1) + " s";
     configLine.textContent = txt;
   }
