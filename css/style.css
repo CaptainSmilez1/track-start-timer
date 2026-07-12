@@ -40,15 +40,20 @@ main{
   width:100%; max-width:560px; text-align:center;
 }
 #eyebrow{
-  font-size:.8rem; font-weight:700; letter-spacing:.28em; text-transform:uppercase;
+  font-size:.8rem; font-weight:800; letter-spacing:.3em; text-transform:uppercase;
   color:var(--muted); transition:color .35s ease;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+}
+#eyebrow::before, #eyebrow::after{
+  content:""; width:18px; height:3px; background:var(--accent); border-radius:2px; opacity:.85;
 }
 #phase{
   font-size:clamp(2.4rem, 11vw, 4.6rem); font-weight:900; line-height:1.05;
-  letter-spacing:.03em; text-transform:uppercase; min-height:1.1em;
+  letter-spacing:.02em; text-transform:uppercase; min-height:1.1em;
+  font-style:italic; transform:skewX(-4deg);
   transition:color .15s ease;
 }
-#phase.go{ color:var(--accent); }
+#phase.go{ color:var(--accent); text-shadow:0 0 28px color-mix(in srgb, var(--accent) 55%, transparent); }
 #sub{
   font-size:clamp(1rem, 4vw, 1.3rem); color:var(--muted); min-height:1.4em;
   font-variant-numeric:tabular-nums;
@@ -61,13 +66,25 @@ main{
   background:linear-gradient(160deg, color-mix(in srgb, var(--accent) 100%, white 12%), var(--accent) 55%);
   color:var(--accent-ink);
   font-family:inherit; font-size:clamp(2.2rem, 9vw, 3.6rem); font-weight:900; letter-spacing:.06em;
-  box-shadow:0 14px 44px rgba(0,0,0,.45), inset 0 2px 0 rgba(255,255,255,.18), inset 0 -10px 24px rgba(0,0,0,.15);
+  font-style:italic;
+  box-shadow:0 10px 0 rgba(0,0,0,.3), 0 20px 44px rgba(0,0,0,.4),
+             inset 0 2px 0 rgba(255,255,255,.22), inset 0 -10px 24px rgba(0,0,0,.18);
+  box-shadow:0 10px 0 rgba(0,0,0,.3), 0 20px 44px rgba(0,0,0,.4),
+             inset 0 2px 0 rgba(255,255,255,.22), inset 0 -10px 24px rgba(0,0,0,.18),
+             0 0 0 6px color-mix(in srgb, var(--accent) 35%, transparent);
   transition:transform .12s cubic-bezier(.34,1.56,.64,1), box-shadow .12s ease, background .35s ease;
 }
-#startBtn:active{ transform:scale(.96); box-shadow:0 8px 26px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.18), inset 0 -10px 24px rgba(0,0,0,.15); }
+#startBtn:active{
+  transform:scale(.96) translateY(4px);
+  box-shadow:0 4px 0 rgba(0,0,0,.3), 0 10px 26px rgba(0,0,0,.4),
+             inset 0 2px 0 rgba(255,255,255,.22), inset 0 -10px 24px rgba(0,0,0,.18);
+  box-shadow:0 4px 0 rgba(0,0,0,.3), 0 10px 26px rgba(0,0,0,.4),
+             inset 0 2px 0 rgba(255,255,255,.22), inset 0 -10px 24px rgba(0,0,0,.18),
+             0 0 0 6px color-mix(in srgb, var(--accent) 35%, transparent);
+}
 @keyframes pulse{
-  0%,100%{ box-shadow:0 14px 44px rgba(0,0,0,.45), inset 0 2px 0 rgba(255,255,255,.18), inset 0 -10px 24px rgba(0,0,0,.15), 0 0 0 0 rgba(255,255,255,.0); }
-  50%   { box-shadow:0 14px 44px rgba(0,0,0,.45), inset 0 2px 0 rgba(255,255,255,.18), inset 0 -10px 24px rgba(0,0,0,.15), 0 0 0 14px rgba(255,255,255,.06); }
+  0%,100%{ box-shadow:0 10px 0 rgba(0,0,0,.3), 0 20px 44px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.22), inset 0 -10px 24px rgba(0,0,0,.18), 0 0 0 6px color-mix(in srgb, var(--accent) 35%, transparent); }
+  50%   { box-shadow:0 10px 0 rgba(0,0,0,.3), 0 20px 44px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.22), inset 0 -10px 24px rgba(0,0,0,.18), 0 0 0 16px color-mix(in srgb, var(--accent) 12%, transparent); }
 }
 #startBtn.pulse{ animation:pulse 2.4s ease-in-out infinite; }
 
@@ -117,7 +134,14 @@ body.settings-open #panel{ transform:translateX(0); }
   display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;
   position:sticky; top:0; background:var(--panel); padding:2px 0 10px; z-index:1;
 }
-.panel-head h2{ margin:0; font-size:1.25rem; font-weight:900; letter-spacing:.02em; }
+.panel-head h2{
+  margin:0; font-size:1.25rem; font-weight:900; letter-spacing:.02em;
+  font-style:italic; position:relative; padding-left:14px;
+}
+.panel-head h2::before{
+  content:""; position:absolute; left:0; top:2px; bottom:2px; width:5px;
+  background:var(--accent); border-radius:3px;
+}
 #closeBtn{
   width:44px; height:44px; border-radius:50%; border:1px solid var(--line);
   background:transparent; color:var(--fg); font-size:1.1rem; cursor:pointer;
@@ -131,10 +155,45 @@ body.settings-open #panel{ transform:translateX(0); }
   text-transform:uppercase; color:var(--muted);
 }
 #panel label{ display:block; font-size:.95rem; font-weight:600; margin:10px 0 4px; text-align:left; }
-#panel label span{ color:var(--muted); font-weight:600; font-variant-numeric:tabular-nums; }
 .hint{ font-size:.82rem; color:var(--muted); margin:6px 0 0; line-height:1.45; text-align:left; }
-input[type=range]{ width:100%; accent-color:var(--accent); height:32px; touch-action:pan-x; }
+.ctrl-label{
+  font-size:.85rem; font-weight:800; letter-spacing:.02em; text-align:left;
+  margin:0 0 8px; color:var(--fg);
+}
 .row{ display:flex; gap:10px; align-items:center; }
+
+/* stepper controls — big tap targets instead of fiddly sliders */
+.chips{ display:flex; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
+.chip{
+  padding:9px 15px; border-radius:999px; border:2px solid var(--line);
+  background:transparent; color:var(--fg); font-family:inherit;
+  font-size:.78rem; font-weight:800; letter-spacing:.01em; cursor:pointer;
+  transition:background .15s ease, border-color .15s ease, transform .1s ease;
+}
+.chip:active{ transform:scale(.94); }
+.chip.active{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+
+.stepper-pair{ display:flex; gap:10px; margin-bottom:6px; }
+.stepper{
+  flex:1; display:flex; align-items:center; justify-content:space-between; gap:4px;
+  background:var(--bg); border:2px solid var(--line); border-radius:14px; padding:5px;
+}
+.stepper-tag{
+  font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em;
+  color:var(--muted); padding-left:8px; flex:0 0 auto;
+}
+.stepper-btn{
+  width:42px; height:42px; flex:0 0 auto; border-radius:10px; border:none;
+  background:var(--panel); color:var(--fg); font-family:inherit;
+  font-size:1.35rem; font-weight:900; line-height:1; cursor:pointer;
+  transition:transform .1s ease, background .15s ease, color .15s ease;
+}
+.stepper-btn:active{ background:var(--accent); color:var(--accent-ink); transform:scale(.9); }
+.stepper-val{
+  flex:1; text-align:center; font-variant-numeric:tabular-nums;
+  font-weight:900; font-size:1.2rem; letter-spacing:.01em;
+}
+.stepper-val small{ font-size:.62em; font-weight:700; color:var(--muted); margin-left:2px; }
 select{
   flex:1; padding:12px; font-size:1rem; font-family:inherit;
   background:var(--bg); color:var(--fg); border:1px solid var(--line); border-radius:10px;

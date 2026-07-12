@@ -211,51 +211,83 @@
     unlockAudio(); SOUNDS[S.sound].play();
   });
 
-  /* volume */
-  const volIn = el("vol"), volVal = el("volVal");
-  volIn.addEventListener("input", function(){
-    S.volume = volIn.value / 100;
-    volVal.textContent = volIn.value + "%";
-    saveSettings();
-  });
-
-  /* timing ranges */
-  const marksMinIn = el("marksMin"), marksMaxIn = el("marksMax"), marksVal = el("marksVal");
-  const setMinIn = el("setMin"), setMaxIn = el("setMax"), setVal = el("setVal");
-
+  /* ---------- stepper controls (replace fiddly sliders with tap +/-) ---------- */
+  function roundStep(v){ return Math.round(v * 10) / 10; }
+  function clamp(v, lo, hi){ return roundStep(Math.min(hi, Math.max(lo, v))); }
+  function fmtNum(n){ return roundStep(n).toString(); }
   function fmtRange(a, b){
     a = +a; b = +b;
     return a === b ? a + " s (fixed)" : a + "–" + b + " s";
   }
-  function refreshTimingLabels(){
-    marksVal.textContent = fmtRange(S.marksMin, S.marksMax);
-    setVal.textContent = fmtRange(S.setMin, S.setMax);
-  }
-  function bindPair(minIn, maxIn, keyMin, keyMax){
-    minIn.addEventListener("input", function(){
-      S[keyMin] = +minIn.value;
-      if(S[keyMin] > S[keyMax]){ S[keyMax] = S[keyMin]; maxIn.value = S[keyMax]; }
-      refreshTimingLabels(); updateConfigLine(); saveSettings();
+
+  /* volume */
+  const volStepper = el("volStepper"), volVal = el("volVal");
+  function renderVol(){ volVal.textContent = Math.round(S.volume * 100); }
+  volStepper.querySelectorAll(".stepper-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      const v = Math.min(100, Math.max(0, Math.round(S.volume * 100) + (+btn.dataset.dir) * 5));
+      S.volume = v / 100;
+      renderVol(); saveSettings();
     });
-    maxIn.addEventListener("input", function(){
-      S[keyMax] = +maxIn.value;
-      if(S[keyMax] < S[keyMin]){ S[keyMin] = S[keyMax]; minIn.value = S[keyMin]; }
-      refreshTimingLabels(); updateConfigLine(); saveSettings();
+  });
+
+  /* a min/max stepper pair with cross-clamping + optional preset chips */
+  function bindRangePair(prefix, keyMin, keyMax, chipsId){
+    const minC = el(prefix + "MinStepper"), maxC = el(prefix + "MaxStepper");
+    const minVal = el(prefix + "MinVal"), maxVal = el(prefix + "MaxVal");
+    const step = +minC.dataset.step, lo = +minC.dataset.min, hi = +minC.dataset.max;
+    const chips = chipsId ? el(chipsId) : null;
+
+    function render(){
+      minVal.textContent = fmtNum(S[keyMin]);
+      maxVal.textContent = fmtNum(S[keyMax]);
+      if(chips){
+        chips.querySelectorAll(".chip").forEach(function(c){
+          c.classList.toggle("active", +c.dataset.min === S[keyMin] && +c.dataset.max === S[keyMax]);
+        });
+      }
+    }
+    minC.querySelectorAll(".stepper-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        S[keyMin] = clamp(S[keyMin] + (+btn.dataset.dir) * step, lo, hi);
+        if(S[keyMin] > S[keyMax]) S[keyMax] = S[keyMin];
+        render(); updateConfigLine(); saveSettings();
+      });
     });
+    maxC.querySelectorAll(".stepper-btn").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        S[keyMax] = clamp(S[keyMax] + (+btn.dataset.dir) * step, lo, hi);
+        if(S[keyMax] < S[keyMin]) S[keyMin] = S[keyMax];
+        render(); updateConfigLine(); saveSettings();
+      });
+    });
+    if(chips){
+      chips.querySelectorAll(".chip").forEach(function(c){
+        c.addEventListener("click", function(){
+          S[keyMin] = +c.dataset.min; S[keyMax] = +c.dataset.max;
+          render(); updateConfigLine(); saveSettings();
+        });
+      });
+    }
+    render();
+    return render;
   }
-  bindPair(marksMinIn, marksMaxIn, "marksMin", "marksMax");
-  bindPair(setMinIn, setMaxIn, "setMin", "setMax");
+  const renderMarks = bindRangePair("marks", "marksMin", "marksMax", "marksPresets");
+  const renderSet = bindRangePair("set", "setMin", "setMax", "setPresets");
 
   /* head start */
-  const hsToggle = el("hsToggle"), hsGapIn = el("hsGap"), hsVal = el("hsVal"), hsGapRow = el("hsGapRow");
+  const hsToggle = el("hsToggle"), hsGapRow = el("hsGapRow");
+  const hsGapStepper = el("hsGapStepper"), hsVal = el("hsVal");
+  function renderHsGap(){ hsVal.textContent = fmtNum(S.headGap); }
+  hsGapStepper.querySelectorAll(".stepper-btn").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      S.headGap = clamp(S.headGap + (+btn.dataset.dir) * 0.5, 0.5, 30);
+      renderHsGap(); updateConfigLine(); saveSettings();
+    });
+  });
   hsToggle.addEventListener("change", function(){
     S.headStart = hsToggle.checked;
     hsGapRow.style.opacity = S.headStart ? 1 : .4;
-    updateConfigLine(); saveSettings();
-  });
-  hsGapIn.addEventListener("input", function(){
-    S.headGap = +hsGapIn.value;
-    hsVal.textContent = S.headGap.toFixed(1) + " s";
     updateConfigLine(); saveSettings();
   });
 
@@ -300,16 +332,13 @@
   }
 
   function syncInputs(){
-    volIn.value = Math.round(S.volume * 100);
-    volVal.textContent = volIn.value + "%";
+    renderVol();
     soundSel.value = S.sound;
-    marksMinIn.value = S.marksMin; marksMaxIn.value = S.marksMax;
-    setMinIn.value = S.setMin;     setMaxIn.value = S.setMax;
+    renderMarks();
+    renderSet();
     hsToggle.checked = S.headStart;
-    hsGapIn.value = S.headGap;
-    hsVal.textContent = S.headGap.toFixed(1) + " s";
+    renderHsGap();
     hsGapRow.style.opacity = S.headStart ? 1 : .4;
-    refreshTimingLabels();
   }
 
   /* ---------- init ---------- */

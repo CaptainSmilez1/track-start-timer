@@ -40,9 +40,13 @@
 
   <section>
     <h3>Sound</h3>
-    <label for="vol">Volume <span id="volVal"></span></label>
-    <input type="range" id="vol" min="0" max="100" step="5">
-    <label for="soundSel">Start signal</label>
+    <div class="ctrl-label">Volume</div>
+    <div class="stepper" id="volStepper" data-min="0" data-max="100" data-step="5">
+      <button class="stepper-btn" data-dir="-1" aria-label="Decrease volume">–</button>
+      <span class="stepper-val"><span id="volVal">85</span><small>%</small></span>
+      <button class="stepper-btn" data-dir="1" aria-label="Increase volume">+</button>
+    </div>
+    <div class="ctrl-label" style="margin-top:16px">Start signal</div>
     <div class="row">
       <select id="soundSel"></select>
       <button class="btn" id="testBtn">Test</button>
@@ -51,23 +55,65 @@
 
   <section>
     <h3>Timing</h3>
-    <p class="hint" style="margin-top:0">A random time inside each range is drawn every start, so no one can predict the gun. Set min = max for a fixed delay.</p>
-    <label>“On your marks” → “Set” <span id="marksVal"></span></label>
-    <input type="range" id="marksMin" min="1" max="15" step="0.5" aria-label="Marks to set, minimum seconds">
-    <input type="range" id="marksMax" min="1" max="15" step="0.5" aria-label="Marks to set, maximum seconds">
-    <label>“Set” → start signal <span id="setVal"></span></label>
-    <input type="range" id="setMin" min="0.5" max="8" step="0.1" aria-label="Set to start, minimum seconds">
-    <input type="range" id="setMax" min="0.5" max="8" step="0.1" aria-label="Set to start, maximum seconds">
-    <p class="hint">Real officials typically fire about 1.5–2.5 s after “Set” — that’s the default range.</p>
+    <p class="hint" style="margin-top:0">A random time inside each range is drawn every start, so no one can predict the gun.</p>
+
+    <div class="ctrl-label">“On your marks” → “Set”</div>
+    <div class="chips" id="marksPresets">
+      <button class="chip" data-min="2" data-max="4">Quick</button>
+      <button class="chip" data-min="4" data-max="7">Standard</button>
+      <button class="chip" data-min="8" data-max="12">Long</button>
+      <button class="chip" data-min="5" data-max="5">Fixed 5s</button>
+    </div>
+    <div class="stepper-pair">
+      <div class="stepper" id="marksMinStepper" data-min="1" data-max="15" data-step="0.5">
+        <span class="stepper-tag">Min</span>
+        <button class="stepper-btn" data-dir="-1" aria-label="Decrease minimum">–</button>
+        <span class="stepper-val"><span id="marksMinVal">4</span><small>s</small></span>
+        <button class="stepper-btn" data-dir="1" aria-label="Increase minimum">+</button>
+      </div>
+      <div class="stepper" id="marksMaxStepper" data-min="1" data-max="15" data-step="0.5">
+        <span class="stepper-tag">Max</span>
+        <button class="stepper-btn" data-dir="-1" aria-label="Decrease maximum">–</button>
+        <span class="stepper-val"><span id="marksMaxVal">7</span><small>s</small></span>
+        <button class="stepper-btn" data-dir="1" aria-label="Increase maximum">+</button>
+      </div>
+    </div>
+
+    <div class="ctrl-label" style="margin-top:18px">“Set” → start signal</div>
+    <p class="hint" style="margin-top:0">Real officials typically fire about 1.5–2.5 s after “Set”.</p>
+    <div class="chips" id="setPresets">
+      <button class="chip" data-min="1" data-max="2">Fast</button>
+      <button class="chip" data-min="1.5" data-max="2.5">Official</button>
+      <button class="chip" data-min="3" data-max="5">Relaxed</button>
+      <button class="chip" data-min="2" data-max="2">Fixed 2s</button>
+    </div>
+    <div class="stepper-pair">
+      <div class="stepper" id="setMinStepper" data-min="0.5" data-max="8" data-step="0.1">
+        <span class="stepper-tag">Min</span>
+        <button class="stepper-btn" data-dir="-1" aria-label="Decrease minimum">–</button>
+        <span class="stepper-val"><span id="setMinVal">1.5</span><small>s</small></span>
+        <button class="stepper-btn" data-dir="1" aria-label="Increase minimum">+</button>
+      </div>
+      <div class="stepper" id="setMaxStepper" data-min="0.5" data-max="8" data-step="0.1">
+        <span class="stepper-tag">Max</span>
+        <button class="stepper-btn" data-dir="-1" aria-label="Decrease maximum">–</button>
+        <span class="stepper-val"><span id="setMaxVal">2.6</span><small>s</small></span>
+        <button class="stepper-btn" data-dir="1" aria-label="Increase maximum">+</button>
+      </div>
+    </div>
   </section>
 
   <section>
     <h3>Head start</h3>
     <label class="switch"><input type="checkbox" id="hsToggle"> Second, delayed start signal</label>
+    <p class="hint" style="margin-top:6px">First signal starts runner 1; the second signal starts runner 2 after the gap below.</p>
     <div id="hsGapRow">
-      <label for="hsGap">Head start gap <span id="hsVal"></span></label>
-      <input type="range" id="hsGap" min="0.5" max="30" step="0.5">
-      <p class="hint">First signal starts runner 1; the second signal starts runner 2 after the gap.</p>
+      <div class="ctrl-label">Head start gap</div>
+      <div class="stepper" id="hsGapStepper" data-min="0.5" data-max="30" data-step="0.5">
+        <button class="stepper-btn" data-dir="-1" aria-label="Decrease gap">–</button>
+        <span class="stepper-val"><span id="hsVal">3.0</span><small>s</small></span>
+        <button class="stepper-btn" data-dir="1" aria-label="Increase gap">+</button>
+      </div>
     </div>
   </section>
 
