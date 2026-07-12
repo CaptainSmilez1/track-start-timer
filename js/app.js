@@ -29,13 +29,40 @@
 
   /* ---------- audio engine (all sounds synthesized, no files) ---------- */
   const AC = window.AudioContext || window.webkitAudioContext;
-  let actx = null;
+  let actx = null, master = null, limiter = null;
+
+  /* iOS mutes Web Audio when the hardware silent switch is on, UNLESS a
+     regular <audio>/<video> element is already playing — so we loop a
+     silent clip to flip the audio session into "playback" mode. */
+  const SILENT_WAV = "data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YSADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
+  const silence = new Audio(SILENT_WAV);
+  silence.loop = true;
+  silence.volume = 0;
+  silence.setAttribute("playsinline", "");
+  function unlockIOSAudioSession(){
+    silence.play().catch(function(){ /* ignore — mainly matters on iOS Safari */ });
+  }
+
   function audio(){
-    if(!actx && AC) actx = new AC();
+    if(!actx && AC){
+      actx = new AC();
+      master = actx.createGain();
+      limiter = actx.createDynamicsCompressor();
+      limiter.threshold.value = -6;
+      limiter.knee.value = 6;
+      limiter.ratio.value = 12;
+      limiter.attack.value = 0.002;
+      limiter.release.value = 0.15;
+      master.connect(limiter);
+      limiter.connect(actx.destination);
+    }
     if(actx && actx.state === "suspended") actx.resume();
+    unlockIOSAudioSession();
     return actx;
   }
-  function vol(){ return S.volume; }
+  /* perceptual (roughly logarithmic) taper — a mid slider position should
+     sound meaningfully louder than "half", not barely audible */
+  function vol(){ return Math.pow(S.volume, 0.55); }
 
   function tone(opt){
     const c = audio(); if(!c) return;
@@ -57,7 +84,7 @@
       if(opt.filter.q) f.Q.value = opt.filter.q;
       node.connect(f); node = f;
     }
-    node.connect(g); g.connect(c.destination);
+    node.connect(g); g.connect(master);
     if(opt.lfo){
       const l = c.createOscillator();
       l.type = opt.lfo.type || "sine"; l.frequency.value = opt.lfo.rate;
@@ -70,7 +97,7 @@
 
   function noiseBurst(opt){
     const c = audio(); if(!c) return;
-    const t = c.currentTime;
+    const t = c.currentTime + (opt.when || 0);
     const dur = opt.dur || 0.4;
     const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate);
     const d = buf.getChannelData(0);
@@ -82,7 +109,7 @@
     f.frequency.setValueAtTime(opt.filterFrom || 8000, t);
     f.frequency.exponentialRampToValueAtTime(opt.filterTo || 400, t + dur);
     const g = c.createGain(); g.gain.setValueAtTime((opt.peak || 1) * vol(), t);
-    src.connect(f); f.connect(g); g.connect(c.destination);
+    src.connect(f); f.connect(g); g.connect(master);
     src.start(t);
   }
 
@@ -92,19 +119,25 @@
     try{
       speechSynthesis.cancel();
       const u = new SpeechSynthesisUtterance(text);
-      u.rate = opt.rate || 1; u.pitch = opt.pitch || 1; u.volume = vol();
+      u.rate = opt.rate || 1; u.pitch = opt.pitch || 1; u.volume = S.volume;
       speechSynthesis.speak(u);
     }catch(e){}
   }
 
   const SOUNDS = {
     bang:    { label: "🔫 Gun bang", play: function(){
-                 audio(); noiseBurst({ dur: .45, peak: 1, filterFrom: 9000, filterTo: 300, decayPow: 2.6 });
-                 tone({ freq: 160, glideTo: 45, dur: .3, type: "sine", peak: .9, attack: .005 });
+                 audio();
+                 noiseBurst({ dur: .5, peak: 1, filterFrom: 10000, filterTo: 250, decayPow: 2.2 });
+                 noiseBurst({ dur: .1, peak: .8, filterFrom: 12000, filterTo: 4000, decayPow: 6, when: .0 });
+                 tone({ freq: 150, glideTo: 40, dur: .35, type: "sine", peak: 1, attack: .003 });
+                 tone({ freq: 90, dur: .22, type: "sine", peak: .6, attack: .002 });
                } },
     horn:    { label: "📢 Loud horn", play: function(){
-                 tone({ freq: 850, dur: .6, type: "square", peak: .6, attack: .005 });
-                 tone({ freq: 1700, dur: .6, type: "sine", peak: .15, attack: .005 });
+                 tone({ freq: 400, dur: .65, type: "square", peak: .8, attack: .01,
+                        filter: { type: "lowpass", freq: 1400, q: .8 } });
+                 tone({ freq: 402, dur: .65, type: "sawtooth", peak: .4, attack: .01,
+                        filter: { type: "lowpass", freq: 1400, q: .8 } });
+                 tone({ freq: 800, dur: .65, type: "sine", peak: .18, attack: .01 });
                } },
     voice:   { label: "🗣️ “Go!”", play: function(){ speak("Go!", { pitch: 1.15, rate: 1 }); } },
     airhorn: { label: "🎉 Air horn", play: function(){
@@ -298,7 +331,6 @@
     b.className = "swatch"; b.dataset.theme = name;
     b.setAttribute("aria-label", name + " theme");
     b.style.background = THEMES[name];
-    if(name === "daylight") b.style.boxShadow = "inset 0 0 0 2px #c3c9d6";
     b.addEventListener("click", function(){
       S.theme = name; applyTheme(); saveSettings();
     });
