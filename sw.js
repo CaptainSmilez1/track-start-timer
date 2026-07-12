@@ -1,4 +1,4 @@
-const CACHE = "track-timer-v1";
+const CACHE = "track-timer-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,7 +7,14 @@ const ASSETS = [
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "./icons/apple-touch-icon.png"
+  "./icons/apple-touch-icon.png",
+  "./sounds/bang.wav",
+  "./sounds/horn.wav",
+  "./sounds/buzzer.wav",
+  "./sounds/whistle.wav",
+  "./sounds/quack.wav",
+  "./sounds/boing.wav",
+  "./sounds/goat.wav"
 ];
 
 self.addEventListener("install", function(event){
