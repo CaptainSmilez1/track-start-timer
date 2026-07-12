@@ -27,14 +27,14 @@
     }, 400);
   }
 
-  /* ---------- audio engine (real bundled files, low-latency playback) ----------
-     Plain <audio>.play() has real startup latency (decode/buffering), enough
-     to be noticeable against the flash/text. Real WAV files decoded once into
-     AudioBuffers and fired via the Web Audio API's AudioBufferSourceNode give
-     near-zero-latency, sample-accurate playback instead — same bundled files,
-     just scheduled through a faster path. Note: a phone's hardware silent/
-     ringer switch is an OS-level thing Safari respects for web audio — no
-     purely web-based trick bypasses that reliably. */
+  /* ---------- audio engine (real bundled files, plain <audio> playback) ----------
+     AudioBufferSourceNode gave lower latency but turned out to silently fail
+     to produce audible output on iOS Safari (both in-browser and installed
+     PWA) despite no thrown errors. Plain <audio> elements are less exciting
+     latency-wise but are what's actually confirmed working on real devices,
+     so reliability wins here. Note: a phone's hardware silent/ringer switch
+     is an OS-level thing Safari respects for web audio — no purely web-based
+     trick bypasses that reliably. */
   const SOUND_FILES = {
     bang: "sounds/bang.wav",
     horn: "sounds/horn.wav",
@@ -44,44 +44,33 @@
     boing: "sounds/boing.wav",
     goat: "sounds/goat.wav"
   };
-  const AC = window.AudioContext || window.webkitAudioContext;
-  let actx = null;
-  const buffers = {};
-
-  function ensureContext(){
-    if(!actx && AC) actx = new AC();
-    return actx;
-  }
-  (function preloadBuffers(){
-    const c = ensureContext(); if(!c) return;
-    Object.keys(SOUND_FILES).forEach(function(key){
-      fetch(SOUND_FILES[key])
-        .then(function(res){ return res.arrayBuffer(); })
-        .then(function(arr){ return c.decodeAudioData(arr); })
-        .then(function(buf){ buffers[key] = buf; })
-        .catch(function(){ /* falls back to being silently skipped if it never loads */ });
-    });
-  })();
+  const audioEls = {};
+  Object.keys(SOUND_FILES).forEach(function(key){
+    const a = new Audio(SOUND_FILES[key]);
+    a.preload = "auto";
+    a.setAttribute("playsinline", "");
+    audioEls[key] = a;
+  });
 
   /* perceptual (roughly logarithmic) taper — a mid slider position should
      sound meaningfully louder than "half", not barely audible */
   function vol(){ return Math.pow(S.volume, 0.55); }
 
+  let unlocked = false;
   function unlockAudio(){
-    const c = ensureContext(); if(!c) return;
-    if(c.state === "suspended") c.resume();
+    if(unlocked) return;
+    unlocked = true;
+    Object.values(audioEls).forEach(function(a){
+      const p = a.play();
+      if(p && p.then) p.then(function(){ a.pause(); a.currentTime = 0; }).catch(function(){});
+    });
   }
 
   function playFile(key){
-    const c = ensureContext(); const buf = buffers[key];
-    if(!c || !buf) return;
-    if(c.state === "suspended") c.resume();
-    const src = c.createBufferSource();
-    src.buffer = buf;
-    const g = c.createGain();
-    g.gain.value = vol();
-    src.connect(g); g.connect(c.destination);
-    src.start();
+    const a = audioEls[key]; if(!a) return;
+    a.currentTime = 0;
+    a.volume = vol();
+    a.play().catch(function(){});
   }
 
   function speak(text, opt){
