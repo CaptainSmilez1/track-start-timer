@@ -206,6 +206,7 @@
   });
   soundSel.addEventListener("change", function(){
     S.sound = soundSel.value; saveSettings(); updateConfigLine();
+    unlockAudio(); SOUNDS[S.sound].play();
   });
   el("testBtn").addEventListener("click", function(){
     unlockAudio(); SOUNDS[S.sound].play();
