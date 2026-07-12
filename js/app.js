@@ -283,7 +283,8 @@
 
   /* themes */
   const THEMES = {
-    track:    { color: "#ff3b30", label: "Track" },
+    track:    { color: "#c8451f", label: "Track" },
+    red:      { color: "#e5262c", label: "Red" },
     ocean:    { color: "#38bdf8", label: "Ocean" },
     field:    { color: "#34d399", label: "Field" },
     sunset:   { color: "#fb923c", label: "Sunset" },
