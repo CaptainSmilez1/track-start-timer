@@ -1,4 +1,4 @@
-const CACHE = "track-timer-v5";
+const CACHE = "track-timer-v6";
 const ASSETS = [
   "./",
   "./index.html",
