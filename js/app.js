@@ -27,90 +27,48 @@
     }, 400);
   }
 
-  /* ---------- audio engine (all sounds synthesized, no files) ---------- */
-  const AC = window.AudioContext || window.webkitAudioContext;
-  let actx = null, master = null, limiter = null;
+  /* ---------- audio engine (real bundled files, plain <audio> playback) ----------
+     Live Web Audio oscillators turned out to be unreliable across mobile
+     browsers (autoplay/AudioContext quirks). Pre-rendered files + a plain
+     <audio> element play far more consistently. Note: a phone's hardware
+     silent/ringer switch is an OS-level thing Safari respects for web
+     audio — no purely web-based trick bypasses that reliably. */
+  const SOUND_FILES = {
+    bang: "sounds/bang.wav",
+    horn: "sounds/horn.wav",
+    buzzer: "sounds/buzzer.wav",
+    whistle: "sounds/whistle.wav",
+    quack: "sounds/quack.wav",
+    boing: "sounds/boing.wav",
+    goat: "sounds/goat.wav"
+  };
+  const audioEls = {};
+  Object.keys(SOUND_FILES).forEach(function(key){
+    const a = new Audio(SOUND_FILES[key]);
+    a.preload = "auto";
+    a.setAttribute("playsinline", "");
+    audioEls[key] = a;
+  });
 
-  /* iOS mutes Web Audio when the hardware silent switch is on, UNLESS a
-     regular <audio>/<video> element is already playing — so we loop a
-     silent clip to flip the audio session into "playback" mode. */
-  const SILENT_WAV = "data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YSADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
-  const silence = new Audio(SILENT_WAV);
-  silence.loop = true;
-  silence.volume = 0;
-  silence.setAttribute("playsinline", "");
-  function unlockIOSAudioSession(){
-    silence.play().catch(function(){ /* ignore — mainly matters on iOS Safari */ });
-  }
-
-  function audio(){
-    if(!actx && AC){
-      actx = new AC();
-      master = actx.createGain();
-      limiter = actx.createDynamicsCompressor();
-      limiter.threshold.value = -6;
-      limiter.knee.value = 6;
-      limiter.ratio.value = 12;
-      limiter.attack.value = 0.002;
-      limiter.release.value = 0.15;
-      master.connect(limiter);
-      limiter.connect(actx.destination);
-    }
-    if(actx && actx.state === "suspended") actx.resume();
-    unlockIOSAudioSession();
-    return actx;
-  }
   /* perceptual (roughly logarithmic) taper — a mid slider position should
      sound meaningfully louder than "half", not barely audible */
   function vol(){ return Math.pow(S.volume, 0.55); }
 
-  function tone(opt){
-    const c = audio(); if(!c) return;
-    const t = c.currentTime + (opt.when || 0);
-    const dur = opt.dur || 0.5;
-    const o = c.createOscillator();
-    o.type = opt.type || "sine";
-    o.frequency.setValueAtTime(opt.freq || 440, t);
-    if(opt.glideTo) o.frequency.exponentialRampToValueAtTime(Math.max(opt.glideTo, 1), t + dur * 0.9);
-    const g = c.createGain();
-    const peak = Math.max((opt.peak || 1) * vol(), 0.0001);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(peak, t + (opt.attack || 0.01));
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    let node = o;
-    if(opt.filter){
-      const f = c.createBiquadFilter();
-      f.type = opt.filter.type; f.frequency.value = opt.filter.freq;
-      if(opt.filter.q) f.Q.value = opt.filter.q;
-      node.connect(f); node = f;
-    }
-    node.connect(g); g.connect(master);
-    if(opt.lfo){
-      const l = c.createOscillator();
-      l.type = opt.lfo.type || "sine"; l.frequency.value = opt.lfo.rate;
-      const lg = c.createGain(); lg.gain.value = opt.lfo.depth;
-      l.connect(lg); lg.connect(o.frequency);
-      l.start(t); l.stop(t + dur + 0.05);
-    }
-    o.start(t); o.stop(t + dur + 0.05);
+  let unlocked = false;
+  function unlockAudio(){
+    if(unlocked) return;
+    unlocked = true;
+    Object.values(audioEls).forEach(function(a){
+      const p = a.play();
+      if(p && p.then) p.then(function(){ a.pause(); a.currentTime = 0; }).catch(function(){});
+    });
   }
 
-  function noiseBurst(opt){
-    const c = audio(); if(!c) return;
-    const t = c.currentTime + (opt.when || 0);
-    const dur = opt.dur || 0.4;
-    const buf = c.createBuffer(1, Math.floor(c.sampleRate * dur), c.sampleRate);
-    const d = buf.getChannelData(0);
-    for(let i = 0; i < d.length; i++){
-      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, opt.decayPow || 2.5);
-    }
-    const src = c.createBufferSource(); src.buffer = buf;
-    const f = c.createBiquadFilter(); f.type = "lowpass";
-    f.frequency.setValueAtTime(opt.filterFrom || 8000, t);
-    f.frequency.exponentialRampToValueAtTime(opt.filterTo || 400, t + dur);
-    const g = c.createGain(); g.gain.setValueAtTime((opt.peak || 1) * vol(), t);
-    src.connect(f); f.connect(g); g.connect(master);
-    src.start(t);
+  function playFile(key){
+    const a = audioEls[key]; if(!a) return;
+    a.currentTime = 0;
+    a.volume = vol();
+    a.play().catch(function(){});
   }
 
   function speak(text, opt){
@@ -125,43 +83,14 @@
   }
 
   const SOUNDS = {
-    bang:    { label: "🔫 Gun bang", play: function(){
-                 audio();
-                 noiseBurst({ dur: .5, peak: 1, filterFrom: 10000, filterTo: 250, decayPow: 2.2 });
-                 noiseBurst({ dur: .1, peak: .8, filterFrom: 12000, filterTo: 4000, decayPow: 6, when: .0 });
-                 tone({ freq: 150, glideTo: 40, dur: .35, type: "sine", peak: 1, attack: .003 });
-                 tone({ freq: 90, dur: .22, type: "sine", peak: .6, attack: .002 });
-               } },
-    horn:    { label: "📢 Loud horn", play: function(){
-                 tone({ freq: 400, dur: .65, type: "square", peak: .8, attack: .01,
-                        filter: { type: "lowpass", freq: 1400, q: .8 } });
-                 tone({ freq: 402, dur: .65, type: "sawtooth", peak: .4, attack: .01,
-                        filter: { type: "lowpass", freq: 1400, q: .8 } });
-                 tone({ freq: 800, dur: .65, type: "sine", peak: .18, attack: .01 });
-               } },
+    bang:    { label: "🔫 Starter gun", play: function(){ playFile("bang"); } },
+    horn:    { label: "📢 Air horn", play: function(){ playFile("horn"); } },
+    buzzer:  { label: "🔔 Buzzer", play: function(){ playFile("buzzer"); } },
+    whistle: { label: "🎵 Whistle", play: function(){ playFile("whistle"); } },
     voice:   { label: "🗣️ “Go!”", play: function(){ speak("Go!", { pitch: 1.15, rate: 1 }); } },
-    airhorn: { label: "🎉 Air horn", play: function(){
-                 [233, 466, 699].forEach(function(f, i){
-                   tone({ freq: f * 1.003, dur: 1.1, type: "sawtooth", peak: .3, attack: .06,
-                          filter: { type: "lowpass", freq: 2500 },
-                          lfo: i === 1 ? { rate: 6, depth: 4 } : null });
-                 });
-               } },
-    quack:   { label: "🦆 Duck quack", play: function(){
-                 tone({ freq: 320, glideTo: 190, dur: .14, type: "sawtooth", peak: .9,
-                        filter: { type: "bandpass", freq: 1100, q: 6 } });
-                 tone({ freq: 320, glideTo: 190, dur: .14, type: "sawtooth", peak: .9, when: .18,
-                        filter: { type: "bandpass", freq: 1100, q: 6 } });
-               } },
-    boing:   { label: "🤪 Cartoon boing", play: function(){
-                 tone({ freq: 620, glideTo: 65, dur: .8, type: "sine", peak: .8,
-                        lfo: { rate: 12, depth: 35 } });
-               } },
-    goat:    { label: "🐐 Goat bleat", play: function(){
-                 tone({ freq: 560, dur: .9, type: "sawtooth", peak: .65,
-                        filter: { type: "bandpass", freq: 900, q: 2 },
-                        lfo: { type: "square", rate: 26, depth: 130 } });
-               } },
+    quack:   { label: "🦆 Duck quack", play: function(){ playFile("quack"); } },
+    boing:   { label: "🤪 Cartoon boing", play: function(){ playFile("boing"); } },
+    goat:    { label: "🐐 Goat bleat", play: function(){ playFile("goat"); } },
     yeehaw:  { label: "🤠 “Yeehaw!”", play: function(){ speak("Yeehaw!", { pitch: 1.9, rate: 1.15 }); } }
   };
 
@@ -203,7 +132,7 @@
 
   function startSequence(){
     if(running) return;
-    audio(); /* unlock sound on this user tap */
+    unlockAudio(); /* unlock sound on this user tap */
     setRunningUI(true);
     setPhase("On your marks", "Take your positions");
     speak("On your marks");
@@ -266,7 +195,7 @@
     S.sound = soundSel.value; saveSettings(); updateConfigLine();
   });
   el("testBtn").addEventListener("click", function(){
-    audio(); SOUNDS[S.sound].play();
+    unlockAudio(); SOUNDS[S.sound].play();
   });
 
   /* volume */
