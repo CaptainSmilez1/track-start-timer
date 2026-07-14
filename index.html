@@ -37,7 +37,7 @@
     <button id="closeBtn" aria-label="Close settings">✕</button>
   </div>
 
-  <section>
+  <section id="soundSection">
     <h3><span class="h3-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 8 8 8 13 4 13 20 8 16 4 16 4 8"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg></span>Sound</h3>
     <div class="ctrl-label">Volume</div>
     <div class="stepper" id="volStepper" data-min="0" data-max="100" data-step="5">
@@ -56,6 +56,7 @@
     <h3><span class="h3-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6"/><path d="M18.5 4.5 20 6"/></svg></span>Timing</h3>
     <p class="hint" style="margin-top:0">A random time inside each range is drawn every start, so no one can predict the gun.</p>
 
+    <div id="marksBlock">
     <div class="ctrl-label">“On your marks” → “Set”</div>
     <div class="chips" id="marksPresets">
       <button class="chip" data-min="2" data-max="4">Quick</button>
@@ -77,7 +78,9 @@
         <button class="stepper-btn" data-dir="1" aria-label="Increase maximum">+</button>
       </div>
     </div>
+    </div>
 
+    <div id="setBlock">
     <div class="ctrl-label" style="margin-top:18px">“Set” → start signal</div>
     <p class="hint" style="margin-top:0">Real officials typically fire about 1.5–2.5 s after “Set”.</p>
     <div class="chips" id="setPresets">
@@ -100,9 +103,10 @@
         <button class="stepper-btn" data-dir="1" aria-label="Increase maximum">+</button>
       </div>
     </div>
+    </div>
   </section>
 
-  <section>
+  <section id="headStartSection">
     <h3><span class="h3-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18"/><path d="M5 4h11l-2.5 4L16 12H5"/></svg></span>Head start</h3>
     <label class="switch"><input type="checkbox" id="hsToggle"> Second, delayed start signal</label>
     <p class="hint" style="margin-top:6px">First signal starts runner 1; the second signal starts runner 2 after the gap below.</p>

@@ -92,12 +92,24 @@ body.running #configLine{ visibility:hidden; }
 #configLine{ display:flex; flex-direction:column; align-items:center; gap:6px; }
 .config-chips{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
 .config-chip{
-  display:inline-flex; align-items:center; gap:6px;
+  display:inline-flex; align-items:center; gap:6px; cursor:pointer;
   padding:6px 12px; border-radius:999px; background:var(--panel); border:1px solid var(--line);
   font-size:.85rem; font-weight:800; color:var(--fg); font-variant-numeric:tabular-nums;
+  transition:transform .1s ease, background .15s ease;
 }
+.config-chip:active{ transform:scale(.94); background:var(--line); }
 .config-chip svg{ width:14px; height:14px; color:var(--accent); flex:0 0 auto; }
-.config-caption{ font-size:.78rem; color:var(--muted); font-weight:600; }
+.config-caption{
+  font-size:.78rem; color:var(--muted); font-weight:600; cursor:pointer;
+  padding:2px 8px; border-radius:999px; transition:background .15s ease, color .15s ease;
+}
+.config-caption:active{ background:var(--panel); color:var(--fg); }
+
+@keyframes settingsHighlight{
+  0%{ box-shadow:0 0 0 3px var(--accent); }
+  100%{ box-shadow:0 0 0 3px transparent; }
+}
+.settings-highlight{ animation:settingsHighlight .9s ease-out; border-radius:16px; }
 
 /* settings trigger */
 #settingsBtn{
