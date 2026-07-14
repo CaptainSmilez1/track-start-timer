@@ -93,8 +93,13 @@ function multiply(samples, env){
   for(let i = 0; i < samples.length; i++) samples[i] *= env[i] ?? 0;
   return samples;
 }
+/* NOTE: deliberately NOT dividing by Math.tanh(drive) to "unity-gain-calibrate"
+   the curve — tanh(x) alone has a hard mathematical ceiling of exactly 1, which
+   is what we want from a safety limiter. Dividing by tanh(drive) < 1 raises
+   that ceiling above 1 for any sample already near full scale, which then
+   hard-clips (real digital distortion) when quantized to 16-bit in writeWav. */
 function softClip(samples, drive){
-  for(let i = 0; i < samples.length; i++) samples[i] = Math.tanh(samples[i] * drive) / Math.tanh(drive);
+  for(let i = 0; i < samples.length; i++) samples[i] = Math.tanh(samples[i] * drive);
   return samples;
 }
 function mixInto(dest, src, gain, startSec){
@@ -103,14 +108,6 @@ function mixInto(dest, src, gain, startSec){
     const j = off + i;
     if(j >= 0 && j < dest.length) dest[j] += src[i] * gain;
   }
-}
-function normalize(samples, peak){
-  let max = 0;
-  for(let i = 0; i < samples.length; i++) max = Math.max(max, Math.abs(samples[i]));
-  if(max <= 0) return samples;
-  const g = peak / max;
-  for(let i = 0; i < samples.length; i++) samples[i] *= g;
-  return samples;
 }
 function fadeEdges(samples, msIn, msOut){
   const nIn = secToSamples(msIn / 1000), nOut = secToSamples(msOut / 1000);
@@ -143,10 +140,29 @@ function writeWav(filePath, samples){
   fs.writeFileSync(filePath, buf);
 }
 
-function finish(samples, peak){
+function rms(samples){
+  let sum = 0;
+  for(let i = 0; i < samples.length; i++) sum += samples[i] * samples[i];
+  return Math.sqrt(sum / samples.length);
+}
+function normalizeRMS(samples, targetRMS){
+  const r = rms(samples);
+  if(r <= 0) return samples;
+  const g = targetRMS / r;
+  for(let i = 0; i < samples.length; i++) samples[i] *= g;
+  return samples;
+}
+
+/* RMS-normalize (not peak-normalize) so every sound lands at roughly the
+   same perceived loudness regardless of how transient vs. sustained its
+   waveform is — a short percussive "bang" and a sustained "horn" peak-
+   normalized to the same value can still sound very different in volume.
+   softClip afterwards catches any peaks RMS-matching pushes over 0dBFS. */
+const TARGET_RMS = 0.30;
+function finish(samples){
   fadeEdges(samples, 1, 8);
-  normalize(samples, peak);
-  softClip(samples, 1.4);
+  normalizeRMS(samples, TARGET_RMS);
+  softClip(samples, 1.5);
   return samples;
 }
 
@@ -177,7 +193,7 @@ function renderBang(){
   multiply(sub, decayEnv(sub.length, 2.4));
   mixInto(buf, sub, 0.45, 0.005);
 
-  return finish(buf, 0.97);
+  return finish(buf);
 }
 
 function renderHorn(){
@@ -203,7 +219,7 @@ function renderHorn(){
   multiply(shimmer, attackDecayEnv(shimmer.length, 0.02));
   mixInto(buf, shimmer, 0.12, 0);
 
-  return finish(buf, 0.9);
+  return finish(buf);
 }
 
 function renderQuack(){
@@ -218,7 +234,7 @@ function renderQuack(){
   }
   blip(0);
   blip(0.19);
-  return finish(buf, 0.85);
+  return finish(buf);
 }
 
 function renderBoing(){
@@ -227,7 +243,7 @@ function renderBoing(){
   const s = osc("sine", t => 620 * Math.pow(65 / 620, t / dur) * (1 + 0.05 * Math.sin(2 * Math.PI * 13 * t)), dur, 0);
   multiply(s, attackDecayEnv(s.length, 0.01));
   mixInto(buf, s, 0.95, 0);
-  return finish(buf, 0.85);
+  return finish(buf);
 }
 
 function renderGoat(){
@@ -237,7 +253,7 @@ function renderGoat(){
   multiply(s, attackDecayEnv(s.length, 0.02));
   filterInPlace(s, () => 900, "bandpass", 2.2);
   mixInto(buf, s, 0.95, 0);
-  return finish(buf, 0.8);
+  return finish(buf);
 }
 
 function renderBuzzer(){
@@ -251,7 +267,7 @@ function renderBuzzer(){
   multiply(s2, attackDecayEnv(s2.length, 0.01));
   filterInPlace(s2, () => 1800, "lowpass", 0.7);
   mixInto(buf, s2, 0.6, 0);
-  return finish(buf, 0.85);
+  return finish(buf);
 }
 
 function renderWhistle(){
@@ -264,7 +280,7 @@ function renderWhistle(){
   filterInPlace(breath, () => 3200, "bandpass", 3);
   multiply(breath, attackDecayEnv(breath.length, 0.03));
   mixInto(buf, breath, 0.12, 0);
-  return finish(buf, 0.85);
+  return finish(buf);
 }
 
 const outDir = path.join(__dirname, "..", "sounds");

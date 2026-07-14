@@ -27,14 +27,17 @@
     }, 400);
   }
 
-  /* ---------- audio engine (real bundled files, plain <audio> playback) ----------
-     AudioBufferSourceNode gave lower latency but turned out to silently fail
-     to produce audible output on iOS Safari (both in-browser and installed
-     PWA) despite no thrown errors. Plain <audio> elements are less exciting
-     latency-wise but are what's actually confirmed working on real devices,
-     so reliability wins here. Note: a phone's hardware silent/ringer switch
-     is an OS-level thing Safari respects for web audio — no purely web-based
-     trick bypasses that reliably. */
+  /* ---------- audio engine (Web Audio API: real bundled files, decoded once) ----------
+     A previous attempt used AudioBufferSourceNode too, but scheduled it as
+     soon as .resume() was *called* rather than once it had actually
+     finished resuming — on iOS Safari, audio scheduled against a context
+     that's still technically "suspended" can be silently dropped instead of
+     queued, which is what made GO/Test produce no sound at all. Fixed here
+     by never calling start() until both the resume() promise and the
+     decode have actually settled. In the steady state (the very common
+     case: context already running, buffer already decoded) that resolves
+     on the next microtask — no perceptible delay — while still being
+     correct the first time, when either one might not be ready yet. */
   const SOUND_FILES = {
     bang: "sounds/bang.wav",
     horn: "sounds/horn.wav",
@@ -44,39 +47,56 @@
     boing: "sounds/boing.wav",
     goat: "sounds/goat.wav"
   };
-  const audioEls = {};
-  Object.keys(SOUND_FILES).forEach(function(key){
-    const a = new Audio(SOUND_FILES[key]);
-    a.preload = "auto";
-    a.setAttribute("playsinline", "");
-    audioEls[key] = a;
-  });
-
-  /* perceptual (roughly logarithmic) taper — a mid slider position should
-     sound meaningfully louder than "half", not barely audible */
-  function vol(){ return Math.pow(S.volume, 0.55); }
-
-  let unlocked = false;
-  function unlockAudio(skipKey){
-    if(unlocked) return;
-    unlocked = true;
-    Object.keys(audioEls).forEach(function(key){
-      if(key === skipKey) return; /* about to be played for real — let that be its own unlock */
-      const a = audioEls[key];
-      a.muted = true; /* priming plays briefly before pause() lands — mute so it's silent */
-      const p = a.play();
-      const restore = function(){ a.pause(); a.currentTime = 0; a.muted = false; };
-      if(p && p.then) p.then(restore).catch(restore);
-      else restore();
+  const AC = window.AudioContext || window.webkitAudioContext;
+  let actx = null, master = null, limiter = null;
+  function ensureContext(){
+    if(actx || !AC) return actx;
+    actx = new AC();
+    master = actx.createGain();
+    /* safety limiter — lets us push master gain past unity for real extra
+       loudness at high volume settings without harsh clipping */
+    limiter = actx.createDynamicsCompressor();
+    limiter.threshold.value = -6;
+    limiter.knee.value = 6;
+    limiter.ratio.value = 12;
+    limiter.attack.value = 0.002;
+    limiter.release.value = 0.12;
+    master.connect(limiter);
+    limiter.connect(actx.destination);
+    return actx;
+  }
+  const bufferPromises = {};
+  (function loadBuffers(){
+    const c = ensureContext(); if(!c) return;
+    Object.keys(SOUND_FILES).forEach(function(key){
+      bufferPromises[key] = fetch(SOUND_FILES[key])
+        .then(function(res){ return res.arrayBuffer(); })
+        .then(function(arr){ return c.decodeAudioData(arr); });
     });
+  })();
+
+  /* perceptual taper through the low/mid range, plus real headroom at the
+     top — gain can go past 1 near full volume; the limiter above keeps
+     that safe from clipping instead of just quietly capping at unity */
+  function vol(){ return Math.pow(S.volume, 0.55) * 1.6; }
+
+  function unlockAudio(){
+    const c = ensureContext(); if(!c) return;
+    if(c.state === "suspended") c.resume();
   }
 
   function playFile(key){
-    const a = audioEls[key]; if(!a) return;
-    a.muted = false; /* clears any leftover mute from unlockAudio()'s priming pass */
-    a.currentTime = 0;
-    a.volume = vol();
-    a.play().catch(function(){});
+    const c = ensureContext(); if(!c) return;
+    const bufferReady = bufferPromises[key]; if(!bufferReady) return;
+    const resumeReady = c.state === "running" ? Promise.resolve() : c.resume().catch(function(){});
+    Promise.all([resumeReady, bufferReady]).then(function(results){
+      const buf = results[1]; if(!buf) return;
+      master.gain.value = vol();
+      const src = c.createBufferSource();
+      src.buffer = buf;
+      src.connect(master);
+      src.start();
+    }).catch(function(){});
   }
 
   function speak(text, opt){
@@ -192,6 +212,25 @@
   el("closeBtn").addEventListener("click", closePanel);
   overlay.addEventListener("click", closePanel);
 
+  /* tapping a config-summary chip/caption jumps straight to that setting.
+     Uses instant scrollIntoView rather than behavior:"smooth" — verified
+     that smooth scrolling can silently no-op depending on the browser
+     engine, while instant scrollTop assignment always actually moves it;
+     the highlight-flash animation supplies the "landed here" feedback
+     that smooth scrolling would otherwise have provided. */
+  configLine.addEventListener("click", function(e){
+    const target = e.target.closest("[data-target]");
+    if(!target) return;
+    const dest = el(target.dataset.target);
+    if(!dest) return;
+    openPanel();
+    setTimeout(function(){
+      dest.scrollIntoView({ behavior: "auto", block: "start" });
+      dest.classList.add("settings-highlight");
+      setTimeout(function(){ dest.classList.remove("settings-highlight"); }, 900);
+    }, 260); /* wait for the panel slide-in so scrollIntoView measures the final layout */
+  });
+
   /* sound select */
   const soundSel = el("soundSel");
   Object.keys(SOUNDS).forEach(function(key){
@@ -201,10 +240,10 @@
   });
   soundSel.addEventListener("change", function(){
     S.sound = soundSel.value; saveSettings(); updateConfigLine();
-    unlockAudio(S.sound); SOUNDS[S.sound].play();
+    unlockAudio(); SOUNDS[S.sound].play();
   });
   el("testBtn").addEventListener("click", function(){
-    unlockAudio(S.sound); SOUNDS[S.sound].play();
+    unlockAudio(); SOUNDS[S.sound].play();
   });
 
   /* ---------- stepper controls (replace fiddly sliders with tap +/-) ---------- */
@@ -327,10 +366,10 @@
   const ICON_FLAG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18"/><path d="M5 4h11l-2.5 4L16 12H5"/></svg>';
   function updateConfigLine(){
     let html = '<div class="config-chips">' +
-      '<span class="config-chip">' + ICON_CLOCK + fmtRange(S.marksMin, S.marksMax) + '</span>' +
-      '<span class="config-chip">' + ICON_SIGNAL + fmtRange(S.setMin, S.setMax) + '</span>';
-    if(S.headStart) html += '<span class="config-chip">' + ICON_FLAG + '+' + fmtNum(S.headGap) + 's</span>';
-    html += '</div><div class="config-caption">' + SOUNDS[S.sound].label + '</div>';
+      '<span class="config-chip" data-target="marksBlock">' + ICON_CLOCK + fmtRange(S.marksMin, S.marksMax) + '</span>' +
+      '<span class="config-chip" data-target="setBlock">' + ICON_SIGNAL + fmtRange(S.setMin, S.setMax) + '</span>';
+    if(S.headStart) html += '<span class="config-chip" data-target="headStartSection">' + ICON_FLAG + '+' + fmtNum(S.headGap) + 's</span>';
+    html += '</div><div class="config-caption" data-target="soundSection">' + SOUNDS[S.sound].label + '</div>';
     configLine.innerHTML = html;
   }
 
