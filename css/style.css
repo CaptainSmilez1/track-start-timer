@@ -99,6 +99,9 @@ body.running #configLine{ visibility:hidden; }
 }
 .config-chip:active{ transform:scale(.94); background:var(--line); }
 .config-chip svg{ width:14px; height:14px; color:var(--accent); flex:0 0 auto; }
+/* the leading icon otherwise pushes the text right of true-center; a
+   hidden mirror-image icon after the text balances it out */
+.chip-spacer{ visibility:hidden; }
 
 @keyframes settingsHighlight{
   0%{ box-shadow:0 0 0 3px var(--accent); }
