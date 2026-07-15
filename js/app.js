@@ -404,13 +404,20 @@
   const ICON_SIGNAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 8 8 8 13 4 13 20 8 16 4 16 4 8"/><path d="M17 8a5 5 0 0 1 0 8"/></svg>';
   const ICON_FLAG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18"/><path d="M5 4h11l-2.5 4L16 12H5"/></svg>';
   const ICON_SOUND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 8 8 8 13 4 13 20 8 16 4 16 4 8"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg>';
+  /* icon + text + an equal-width invisible spacer, so the text sits
+     truly centered instead of pushed right by the icon on its own */
+  function chip(target, icon, text){
+    return '<span class="config-chip" data-target="' + target + '">' + icon +
+      '<span class="chip-text">' + text + '</span>' +
+      '<span class="chip-spacer" aria-hidden="true">' + icon + '</span></span>';
+  }
   function updateConfigLine(){
     let html = '<div class="config-chips">' +
-      '<span class="config-chip" data-target="marksBlock">' + ICON_CLOCK + fmtRange(S.marksMin, S.marksMax) + '</span>' +
-      '<span class="config-chip" data-target="setBlock">' + ICON_SIGNAL + fmtRange(S.setMin, S.setMax) + '</span>';
-    if(S.headStart) html += '<span class="config-chip" data-target="headStartSection">' + ICON_FLAG + '+' + fmtNum(S.headGap) + 's</span>';
+      chip("marksBlock", ICON_CLOCK, fmtRange(S.marksMin, S.marksMax)) +
+      chip("setBlock", ICON_SIGNAL, fmtRange(S.setMin, S.setMax));
+    if(S.headStart) html += chip("headStartSection", ICON_FLAG, "+" + fmtNum(S.headGap) + "s");
     html += '</div><div class="config-chips">' +
-      '<span class="config-chip" data-target="soundSection">' + ICON_SOUND + SOUNDS[S.sound].label + '</span>' +
+      chip("soundSection", ICON_SOUND, SOUNDS[S.sound].label) +
       '</div>';
     configLine.innerHTML = html;
   }
