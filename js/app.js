@@ -217,24 +217,37 @@
   el("closeBtn").addEventListener("click", closePanel);
   overlay.addEventListener("click", closePanel);
 
-  /* tapping a config-summary chip/caption jumps straight to that setting.
-     Uses instant scrollIntoView rather than behavior:"smooth" — verified
-     that smooth scrolling can silently no-op depending on the browser
-     engine, while instant scrollTop assignment always actually moves it;
-     the highlight-flash animation supplies the "landed here" feedback
-     that smooth scrolling would otherwise have provided. */
+  /* tapping a config-summary chip jumps straight to that setting. The
+     panel's content is laid out (has real offsets) even while off-screen
+     behind its closed transform, so scrollTop is set *before* opening —
+     the panel then slides in already showing the right section, instead
+     of opening at the top and visibly scrolling into place. */
   configLine.addEventListener("click", function(e){
     const target = e.target.closest("[data-target]");
     if(!target) return;
     const dest = el(target.dataset.target);
     if(!dest) return;
+    panel.scrollTop = Math.max(0, dest.offsetTop - 16);
     openPanel();
-    setTimeout(function(){
-      dest.scrollIntoView({ behavior: "auto", block: "center" });
-      dest.classList.add("settings-highlight");
-      setTimeout(function(){ dest.classList.remove("settings-highlight"); }, 900);
-    }, 260); /* wait for the panel slide-in so scrollIntoView measures the final layout */
+    dest.classList.add("settings-highlight");
+    setTimeout(function(){ dest.classList.remove("settings-highlight"); }, 900);
   });
+
+  /* swipe right anywhere on the panel to dismiss it, same as tapping the
+     close button or the overlay — a plain gesture check, not a live
+     finger-follow drag, so it can't fight the panel's normal scrolling */
+  (function(){
+    let startX = 0, startY = 0, startT = 0;
+    panel.addEventListener("touchstart", function(e){
+      const t = e.touches[0];
+      startX = t.clientX; startY = t.clientY; startT = Date.now();
+    }, { passive: true });
+    panel.addEventListener("touchend", function(e){
+      const t = e.changedTouches[0];
+      const dx = t.clientX - startX, dy = t.clientY - startY;
+      if(dx > 70 && Math.abs(dy) < 60 && Date.now() - startT < 600) closePanel();
+    }, { passive: true });
+  })();
 
   /* sound select */
   const soundSel = el("soundSel");
@@ -375,8 +388,9 @@
       '<span class="config-chip" data-target="marksBlock">' + ICON_CLOCK + fmtRange(S.marksMin, S.marksMax) + '</span>' +
       '<span class="config-chip" data-target="setBlock">' + ICON_SIGNAL + fmtRange(S.setMin, S.setMax) + '</span>';
     if(S.headStart) html += '<span class="config-chip" data-target="headStartSection">' + ICON_FLAG + '+' + fmtNum(S.headGap) + 's</span>';
-    html += '<span class="config-chip" data-target="soundSection">' + ICON_SOUND + SOUNDS[S.sound].label + '</span>';
-    html += '</div>';
+    html += '</div><div class="config-chips">' +
+      '<span class="config-chip" data-target="soundSection">' + ICON_SOUND + SOUNDS[S.sound].label + '</span>' +
+      '</div>';
     configLine.innerHTML = html;
   }
 
