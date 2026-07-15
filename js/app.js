@@ -205,6 +205,7 @@
   function cancelSequence(){
     clearAllTimers();
     setRunningUI(false);
+    replayLaunchAnimation(); /* same full pop/ring animation as startup and closing settings */
   }
 
   startBtn.addEventListener("click", startSequence);
@@ -214,21 +215,29 @@
   const overlay = el("overlay"), panel = el("panel");
   const launchRing = el("launchRing");
 
+  const LAUNCH_ELS = [launchRing, eyebrow, phaseEl, subEl, startBtn, configLine, settingsBtn];
+
+  /* dropping the inline animation falls back to each element's static
+     opacity:0, so the screen goes genuinely blank instead of showing
+     whatever fully-opaque state the last animation finished on */
+  function blankLaunchElements(){
+    LAUNCH_ELS.forEach(function(elm){ if(elm) elm.style.animation = "none"; });
+  }
   /* restart the launch pop/ring animation (normally a one-time thing on
      page load) — clearing the inline animation and forcing a reflow before
      restoring it is what actually makes a CSS animation replay, just
      toggling a class does nothing once the animation has already finished */
   function replayLaunchAnimation(){
-    const els = [launchRing, eyebrow, phaseEl, subEl, startBtn, configLine, settingsBtn];
-    els.forEach(function(elm){ if(elm) elm.style.animation = "none"; });
+    blankLaunchElements();
     void panel.offsetWidth; /* force reflow */
-    els.forEach(function(elm){ if(elm) elm.style.animation = ""; });
+    LAUNCH_ELS.forEach(function(elm){ if(elm) elm.style.animation = ""; });
   }
 
   function openPanel(){ body.classList.add("settings-open"); }
   function closePanel(){
     body.classList.remove("settings-open");
-    setTimeout(replayLaunchAnimation, 320); /* let the panel finish sliding away first */
+    blankLaunchElements(); /* blank immediately so the screen the panel reveals as it slides away is empty */
+    setTimeout(replayLaunchAnimation, 320); /* then replay once the panel's finished sliding away */
   }
   settingsBtn.addEventListener("click", openPanel);
   el("closeBtn").addEventListener("click", closePanel);
