@@ -172,13 +172,13 @@ body.running #configLine{ visibility:hidden; }
   backdrop-filter:blur(2px);
 }
 #panel{
-  position:fixed; top:0; right:0; bottom:0; z-index:50;
-  width:min(380px, 94vw); background:var(--panel); border-left:1px solid var(--line);
-  box-shadow:-16px 0 40px rgba(0,0,0,.35);
+  position:fixed; inset:0; z-index:50;
+  background:var(--panel);
   transform:translateX(105%); transition:transform .32s cubic-bezier(.32,.72,0,1);
   overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
   padding:18px 20px calc(28px + env(safe-area-inset-bottom));
 }
+#panel .panel-inner{ max-width:560px; margin:0 auto; }
 body.settings-open #overlay{ opacity:1; pointer-events:auto; }
 body.settings-open #panel{ transform:translateX(0); }
 body.settings-open #closeBtn{ display:flex; align-items:center; justify-content:center; }
@@ -202,10 +202,14 @@ body.settings-open #closeBtn{ display:flex; align-items:center; justify-content:
   display:none;
   position:fixed; top:calc(18px + env(safe-area-inset-top)); right:20px; z-index:55;
   width:44px; height:44px; border-radius:50%; border:1px solid var(--line);
-  background:var(--panel); color:var(--fg); font-size:1.1rem; cursor:pointer;
+  background:var(--panel); color:var(--fg); cursor:pointer;
   box-shadow:0 4px 14px rgba(0,0,0,.25);
   transition:transform .12s ease, background .15s ease;
 }
+/* an SVG X instead of the "✕" glyph — the character's own font metrics sat
+   a couple pixels off the button's true center; a stroked icon (like the
+   settings gear) centers exactly instead of depending on font rendering */
+#closeBtn svg{ width:18px; height:18px; }
 #closeBtn:active{ background:var(--bg); transform:scale(.92); }
 #panel section{
   background:var(--bg); border:1px solid var(--line); border-radius:16px;
