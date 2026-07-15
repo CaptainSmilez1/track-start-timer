@@ -1,4 +1,4 @@
-# Track Start Timer
+# Starta
 
 A randomized "on your marks, set, go" starter timer for track practice — runs entirely in the browser, installable as an app on phones (PWA).
 
