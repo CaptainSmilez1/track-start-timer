@@ -211,8 +211,24 @@
 
   /* ---------- settings UI ---------- */
   const overlay = el("overlay"), panel = el("panel");
+  const launchRing = el("launchRing");
+
+  /* restart the launch pop/ring animation (normally a one-time thing on
+     page load) — clearing the inline animation and forcing a reflow before
+     restoring it is what actually makes a CSS animation replay, just
+     toggling a class does nothing once the animation has already finished */
+  function replayLaunchAnimation(){
+    const els = [launchRing, eyebrow, phaseEl, subEl, startBtn, configLine, settingsBtn];
+    els.forEach(function(elm){ if(elm) elm.style.animation = "none"; });
+    void panel.offsetWidth; /* force reflow */
+    els.forEach(function(elm){ if(elm) elm.style.animation = ""; });
+  }
+
   function openPanel(){ body.classList.add("settings-open"); }
-  function closePanel(){ body.classList.remove("settings-open"); }
+  function closePanel(){
+    body.classList.remove("settings-open");
+    setTimeout(replayLaunchAnimation, 320); /* let the panel finish sliding away first */
+  }
   settingsBtn.addEventListener("click", openPanel);
   el("closeBtn").addEventListener("click", closePanel);
   overlay.addEventListener("click", closePanel);
@@ -400,10 +416,14 @@
   });
 
   /* config summary on the main screen — compact icon chips instead of a sentence */
-  const ICON_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6"/></svg>';
-  const ICON_SIGNAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 8 8 8 13 4 13 20 8 16 4 16 4 8"/><path d="M17 8a5 5 0 0 1 0 8"/></svg>';
-  const ICON_FLAG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18"/><path d="M5 4h11l-2.5 4L16 12H5"/></svg>';
-  const ICON_SOUND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="4 8 8 8 13 4 13 20 8 16 4 16 4 8"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></svg>';
+  /* each icon's artwork is nudged via an inner <g transform> so its inked
+     shape sits centered in the 24x24 viewBox — several of these (flag and
+     sound especially) were drawn well off-center, which threw off the
+     already-symmetric chip padding around them */
+  const ICON_CLOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0,0.5)"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2"/><path d="M9 2h6"/></g></svg>';
+  const ICON_SIGNAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0.5,0)"><polygon points="4 8 8 8 13 4 13 20 8 16 4 16 4 8"/><path d="M17 8a5 5 0 0 1 0 8"/></g></svg>';
+  const ICON_FLAG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(1.5,0)"><path d="M5 3v18"/><path d="M5 4h11l-2.5 4L16 12H5"/></g></svg>';
+  const ICON_SOUND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(-1.14,0)"><polygon points="4 8 8 8 13 4 13 20 8 16 4 16 4 8"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></g></svg>';
   /* icon + text + an equal-width invisible spacer, so the text sits
      truly centered instead of pushed right by the icon on its own */
   function chip(target, icon, text){
