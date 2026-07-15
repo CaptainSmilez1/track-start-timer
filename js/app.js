@@ -217,20 +217,41 @@
   el("closeBtn").addEventListener("click", closePanel);
   overlay.addEventListener("click", closePanel);
 
-  /* tapping a config-summary chip jumps straight to that setting. The
-     panel's content is laid out (has real offsets) even while off-screen
-     behind its closed transform, so scrollTop is set *before* opening —
-     the panel then slides in already showing the right section, instead
-     of opening at the top and visibly scrolling into place. */
+  /* self-driven scroll animation — deliberately not scrollIntoView's
+     behavior:"smooth", which was verified earlier to silently no-op
+     depending on the browser engine. A manual rAF tween always runs. */
+  function animateScrollTo(elToScroll, targetTop, duration, onDone){
+    const start = elToScroll.scrollTop;
+    const change = targetTop - start;
+    if(Math.abs(change) < 1){ if(onDone) onDone(); return; }
+    const t0 = performance.now();
+    function step(now){
+      const t = Math.min(1, (now - t0) / duration);
+      const eased = 1 - Math.pow(1 - t, 3); /* ease-out cubic */
+      elToScroll.scrollTop = start + change * eased;
+      if(t < 1) requestAnimationFrame(step);
+      else if(onDone) onDone();
+    }
+    requestAnimationFrame(step);
+  }
+
+  /* tapping a config-summary chip opens the panel at the top, then
+     scrolls down to center that setting (no motion at all if it's
+     already at/near the top, e.g. the Sound section). */
   configLine.addEventListener("click", function(e){
     const target = e.target.closest("[data-target]");
     if(!target) return;
     const dest = el(target.dataset.target);
     if(!dest) return;
-    panel.scrollTop = Math.max(0, dest.offsetTop - 16);
+    panel.scrollTop = 0;
     openPanel();
-    dest.classList.add("settings-highlight");
-    setTimeout(function(){ dest.classList.remove("settings-highlight"); }, 900);
+    const desired = Math.max(0, dest.offsetTop - (panel.clientHeight - dest.offsetHeight) / 2);
+    setTimeout(function(){
+      animateScrollTo(panel, desired, 420, function(){
+        dest.classList.add("settings-highlight");
+        setTimeout(function(){ dest.classList.remove("settings-highlight"); }, 900);
+      });
+    }, 320); /* let the panel finish sliding in first */
   });
 
   /* swipe right anywhere on the panel to dismiss it, same as tapping the
