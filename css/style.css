@@ -37,7 +37,8 @@ body.flash{ animation:flashBg .55s ease-out; }
   position:fixed; left:50%; top:50%; width:120vmax; height:120vmax;
   margin:-60vmax 0 0 -60vmax; border-radius:50%; pointer-events:none; z-index:1;
   background:radial-gradient(circle, color-mix(in srgb, var(--accent) 55%, transparent) 0%, transparent 62%);
-  animation:launchRing .9s cubic-bezier(.16,.84,.44,1) both;
+  opacity:0;
+  animation:launchRing 1.3s cubic-bezier(.16,.84,.44,1) both;
 }
 @keyframes popIn{
   0%{ opacity:0; transform:scale(.5); }
@@ -67,7 +68,8 @@ main{
   font-size:.8rem; font-weight:800; letter-spacing:.3em; text-transform:uppercase;
   color:var(--muted); transition:color .35s ease;
   display:flex; align-items:center; justify-content:center; gap:10px;
-  animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both .34s;
+  opacity:0;
+  animation:popIn .7s cubic-bezier(.34,1.56,.64,1) both .48s;
 }
 #eyebrow::before, #eyebrow::after{
   content:""; width:18px; height:3px; background:var(--accent); border-radius:2px; opacity:.85;
@@ -77,13 +79,20 @@ main{
   letter-spacing:.02em; text-transform:uppercase; min-height:1.1em;
   font-style:italic; transform:skewX(-4deg);
   transition:color .15s ease;
-  animation:popInSkew .5s cubic-bezier(.34,1.56,.64,1) both .27s;
+  opacity:0;
+  animation:popInSkew .7s cubic-bezier(.34,1.56,.64,1) both .38s;
 }
 #phase.go{ color:var(--accent); }
+/* reserves room for two lines (e.g. "ON YOUR MARKS" wrapping) while a
+   sequence is running, so the cancel button below never shifts between the
+   marks/set/go phases even though "Set"/"Go" only need one line — reserving
+   this at idle too would just add dead space under "Starter · Ready" */
+body.running #phase{ min-height:2.2em; }
 #sub{
   font-size:clamp(1rem, 4vw, 1.3rem); color:var(--muted); min-height:1.4em;
   font-variant-numeric:tabular-nums;
-  animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both .2s;
+  opacity:0;
+  animation:popIn .7s cubic-bezier(.34,1.56,.64,1) both .3s;
 }
 
 #startBtn{
@@ -114,8 +123,9 @@ main{
   50%   { box-shadow:0 10px 0 rgba(0,0,0,.3), 0 20px 44px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.22), inset 0 -10px 24px rgba(0,0,0,.18), 0 0 0 16px color-mix(in srgb, var(--accent) 12%, transparent); }
 }
 #startBtn.pulse{
+  opacity:0;
   animation:pulse 2.4s ease-in-out infinite,
-            launchPop .7s cubic-bezier(.34,1.56,.64,1) both;
+            launchPop 1s cubic-bezier(.34,1.56,.64,1) both;
 }
 
 #cancelBtn{
@@ -131,7 +141,8 @@ body.running #configLine{ visibility:hidden; }
 
 #configLine{
   display:flex; flex-direction:column; align-items:center; gap:6px;
-  animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both .15s;
+  opacity:0;
+  animation:popIn .7s cubic-bezier(.34,1.56,.64,1) both .2s;
 }
 .config-chips{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
 .config-chip{
@@ -340,9 +351,9 @@ select{
 
 :focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
 @media (prefers-reduced-motion: reduce){
-  #startBtn.pulse{ animation:pulse 2.4s ease-in-out infinite; }
+  #startBtn.pulse{ animation:pulse 2.4s ease-in-out infinite; opacity:1; }
   body.flash{ animation:none; }
   #panel, #overlay{ transition:none; }
   #launchRing{ display:none; }
-  #eyebrow, #phase, #sub, #configLine, #settingsBtn{ animation:none; }
+  #eyebrow, #phase, #sub, #configLine, #settingsBtn{ animation:none; opacity:1; }
 }
