@@ -99,11 +99,6 @@ body.running #configLine{ visibility:hidden; }
 }
 .config-chip:active{ transform:scale(.94); background:var(--line); }
 .config-chip svg{ width:14px; height:14px; color:var(--accent); flex:0 0 auto; }
-.config-caption{
-  font-size:.78rem; color:var(--muted); font-weight:600; cursor:pointer;
-  padding:2px 8px; border-radius:999px; transition:background .15s ease, color .15s ease;
-}
-.config-caption:active{ background:var(--panel); color:var(--fg); }
 
 @keyframes settingsHighlight{
   0%{ box-shadow:0 0 0 3px var(--accent); }

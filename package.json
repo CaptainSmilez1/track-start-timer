@@ -1,5 +1,5 @@
 {
-  "name": "track-timer",
+  "name": "starta",
   "version": "1.0.0",
   "description": "A randomized \"on your marks, set, go\" starter timer for track practice — runs entirely in the browser, installable as an app on phones (PWA).",
   "main": "sw.js",

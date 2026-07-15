@@ -1,6 +1,6 @@
 {
-  "name": "Track Start Timer",
-  "short_name": "Start Timer",
+  "name": "Starta",
+  "short_name": "Starta",
   "description": "Randomized \"on your marks, set, go\" starter timer for track practice.",
   "start_url": "./index.html",
   "scope": "./",
