@@ -158,7 +158,7 @@ function normalizeRMS(samples, targetRMS){
    waveform is — a short percussive "bang" and a sustained "horn" peak-
    normalized to the same value can still sound very different in volume.
    softClip afterwards catches any peaks RMS-matching pushes over 0dBFS. */
-const TARGET_RMS = 0.30;
+const TARGET_RMS = 0.55;
 function finish(samples){
   fadeEdges(samples, 1, 8);
   normalizeRMS(samples, TARGET_RMS);

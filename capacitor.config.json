@@ -1,0 +1,8 @@
+{
+  "appId": "com.captainsmilez1.tracktimer",
+  "appName": "Track Start Timer",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

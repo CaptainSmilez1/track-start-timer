@@ -27,16 +27,22 @@
     }, 400);
   }
 
-  /* ---------- audio engine (real bundled files, plain <audio> playback) ----------
+  /* ---------- audio engine ----------
      Two different Web Audio API approaches (AudioBufferSourceNode, both a
      naive version and a resume-then-play-sequenced version) both turned out
      to silently fail on real iOS Safari despite working in every automated
      test available here. Plain <audio> elements are what's actually been
-     confirmed, on the real device, to produce sound — so that wins over the
-     lower latency Web Audio would give, full stop, no more retrying it.
-     Note: a phone's hardware silent/ringer switch is an OS-level thing
-     Safari respects for web audio — no purely web-based trick bypasses
-     that reliably. */
+     confirmed, on the real device, to produce sound in the browser/PWA — so
+     that stays as the web fallback, untouched, no more retrying Web Audio
+     there. Note: a phone's hardware silent/ringer switch is an OS-level
+     thing Safari respects for web audio — no purely web-based trick
+     bypasses that reliably.
+
+     When actually running inside the native app shell (Capacitor), we use
+     real native audio via @capacitor-community/native-audio instead — a
+     native AVAudioPlayer/SoundPool call has none of the web <audio>
+     element's startup latency, and isn't subject to Safari's web-audio
+     quirks at all since it isn't going through the WebView's audio stack. */
   const SOUND_FILES = {
     bang: "sounds/bang.wav",
     horn: "sounds/horn.wav",
@@ -46,21 +52,33 @@
     boing: "sounds/boing.wav",
     goat: "sounds/goat.wav"
   };
-  const audioEls = {};
-  Object.keys(SOUND_FILES).forEach(function(key){
-    const a = new Audio(SOUND_FILES[key]);
-    a.preload = "auto";
-    a.setAttribute("playsinline", "");
-    audioEls[key] = a;
-  });
+  const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  const NativeAudio = isNative && window.Capacitor.Plugins ? window.Capacitor.Plugins.NativeAudio : null;
 
   /* perceptual (roughly logarithmic) taper — a mid slider position should
      sound meaningfully louder than "half", not barely audible */
   function vol(){ return Math.pow(S.volume, 0.55); }
 
+  const audioEls = {};
+  if(NativeAudio){
+    Object.keys(SOUND_FILES).forEach(function(key){
+      NativeAudio.preload({
+        assetId: key, assetPath: "sounds/" + key + ".wav",
+        audioChannelNum: 1, isUrl: false
+      }).catch(function(){});
+    });
+  }else{
+    Object.keys(SOUND_FILES).forEach(function(key){
+      const a = new Audio(SOUND_FILES[key]);
+      a.preload = "auto";
+      a.setAttribute("playsinline", "");
+      audioEls[key] = a;
+    });
+  }
+
   let unlocked = false;
   function unlockAudio(skipKey){
-    if(unlocked) return;
+    if(NativeAudio || unlocked) return; /* native playback needs no browser-gesture unlock */
     unlocked = true;
     Object.keys(audioEls).forEach(function(key){
       if(key === skipKey) return; /* about to be played for real — let that be its own unlock */
@@ -74,6 +92,11 @@
   }
 
   function playFile(key){
+    if(NativeAudio){
+      NativeAudio.setVolume({ assetId: key, volume: Math.max(0.1, Math.min(1, vol())) }).catch(function(){}); /* plugin's documented range is 0.1-1.0 */
+      NativeAudio.play({ assetId: key }).catch(function(){});
+      return;
+    }
     const a = audioEls[key]; if(!a) return;
     a.muted = false; /* clears any leftover mute from unlockAudio()'s priming pass */
     a.currentTime = 0;
