@@ -9,6 +9,7 @@ body[data-theme="field"]  { --bg:#0a1f14; --panel:#11301f; --line:#1e4a31; --acc
 body[data-theme="sunset"] { --bg:#1b0f1e; --panel:#2a1730; --line:#43254c; --accent:#fb923c; --accent-ink:#20100a; }
 body[data-theme="daylight"]{ --bg:#f4f6fb; --panel:#ffffff; --line:#d7dce8; --fg:#101828; --muted:#5b6474;
                              --accent:#dc2626; --accent-ink:#ffffff; }
+body[data-theme="hazard"]{ --bg:#0c0c0a; --panel:#1a1a14; --line:#33321f; --accent:#f4c81a; --accent-ink:#0c0c0a; }
 
 *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 html,body{ height:100%; overscroll-behavior:none; }
@@ -141,9 +142,6 @@ body.running #configLine{ visibility:hidden; }
 }
 .config-chip:active{ transform:scale(.94); background:var(--line); }
 .config-chip svg{ width:14px; height:14px; color:var(--accent); flex:0 0 auto; }
-/* the leading icon otherwise pushes the text right of true-center; a
-   hidden mirror-image icon after the text balances it out */
-.chip-spacer{ visibility:hidden; }
 
 @keyframes settingsHighlight{
   0%{ box-shadow:0 0 0 3px var(--accent); }
@@ -308,6 +306,36 @@ select{
   font-size:.68rem; font-weight:700; color:var(--muted); letter-spacing:.01em;
 }
 .theme-option.active .theme-name{ color:var(--fg); }
+
+#customColorRow{
+  display:flex; align-items:center; gap:12px; margin-top:4px;
+  padding:10px; border-radius:14px; border:2px solid transparent;
+  transition:background .15s ease, border-color .15s ease;
+}
+#customColorRow.active{ background:var(--panel); border-color:var(--line); }
+#customColorSwatch{
+  position:relative; flex:0 0 auto; width:44px; height:44px; border-radius:50%;
+  cursor:pointer; box-shadow:inset 0 0 0 1px rgba(0,0,0,.15);
+  display:flex; align-items:center; justify-content:center;
+}
+/* the native color input IS the swatch — its own chrome is stripped so it
+   reads as a plain circle, same visual language as the theme swatches */
+#customColorInput{
+  -webkit-appearance:none; appearance:none; width:100%; height:100%;
+  border:none; border-radius:50%; padding:0; cursor:pointer; background:none;
+}
+#customColorInput::-webkit-color-swatch-wrapper{ padding:0; border-radius:50%; }
+#customColorInput::-webkit-color-swatch{ border:none; border-radius:50%; }
+#customColorInput::-moz-color-swatch{ border:none; border-radius:50%; }
+#customColorRow.active #customColorSwatch::after{
+  content:"✓"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+  font-size:1.1rem; font-weight:900; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.6); pointer-events:none;
+}
+#customColorTitle{ font-size:.9rem; font-weight:700; }
+#customColorHex{
+  font-size:.75rem; font-weight:700; color:var(--muted); letter-spacing:.02em;
+  font-variant-numeric:tabular-nums; text-transform:uppercase; margin-top:2px;
+}
 #resetBtn{ width:100%; margin-top:4px; }
 
 :focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }

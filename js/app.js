@@ -6,7 +6,8 @@
     volume: 0.85, theme: "track", sound: "bang",
     marksMin: 4, marksMax: 7,
     setMin: 1.5, setMax: 2.6,
-    headStart: false, headGap: 3
+    headStart: false, headGap: 3,
+    customAccent: "#c8451f"
   };
   let S = Object.assign({}, DEFAULTS);
 
@@ -388,7 +389,8 @@
     ocean:    { color: "#38bdf8", label: "Ocean" },
     field:    { color: "#34d399", label: "Field" },
     sunset:   { color: "#fb923c", label: "Sunset" },
-    daylight: { color: "#f4f6fb", label: "Daylight" }
+    daylight: { color: "#f4f6fb", label: "Daylight" },
+    hazard:   { color: "#f4c81a", label: "Hazard" }
   };
   const themesWrap = el("themes");
   Object.keys(THEMES).forEach(function(name){
@@ -402,11 +404,38 @@
     });
     themesWrap.appendChild(opt);
   });
+  /* readable text color for a given background — plain luminance heuristic,
+     no need for full sRGB gamma correction at this scale */
+  function contrastInk(hex){
+    const n = parseInt(hex.slice(1), 16);
+    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return lum > 0.6 ? "#101418" : "#ffffff";
+  }
+
+  const customColorInput = el("customColorInput");
+  const customColorRow = el("customColorRow");
+  const customColorHex = el("customColorHex");
+  customColorInput.addEventListener("input", function(){
+    S.theme = "custom"; S.customAccent = customColorInput.value;
+    applyTheme(); saveSettings();
+  });
+
   function applyTheme(){
     body.dataset.theme = S.theme;
+    if(S.theme === "custom"){
+      body.style.setProperty("--accent", S.customAccent);
+      body.style.setProperty("--accent-ink", contrastInk(S.customAccent));
+    }else{
+      body.style.removeProperty("--accent");
+      body.style.removeProperty("--accent-ink");
+    }
     themesWrap.querySelectorAll(".theme-option").forEach(function(s){
       s.classList.toggle("active", s.dataset.theme === S.theme);
     });
+    customColorInput.value = S.customAccent;
+    customColorHex.textContent = S.customAccent.toUpperCase();
+    customColorRow.classList.toggle("active", S.theme === "custom");
   }
 
   /* reset */
@@ -424,12 +453,12 @@
   const ICON_SIGNAL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(0.5,0)"><polygon points="4 8 8 8 13 4 13 20 8 16 4 16 4 8"/><path d="M17 8a5 5 0 0 1 0 8"/></g></svg>';
   const ICON_FLAG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(1.5,0)"><path d="M5 3v18"/><path d="M5 4h11l-2.5 4L16 12H5"/></g></svg>';
   const ICON_SOUND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="translate(-1.14,0)"><polygon points="4 8 8 8 13 4 13 20 8 16 4 16 4 8"/><path d="M17 8a5 5 0 0 1 0 8"/><path d="M19.5 5.5a9 9 0 0 1 0 13"/></g></svg>';
-  /* icon + text + an equal-width invisible spacer, so the text sits
-     truly centered instead of pushed right by the icon on its own */
+  /* icon + text as one tight group — there's no icon on the right side of
+     these chips, so the pill is padded evenly around the icon+text group
+     itself rather than carrying dead space held open for a phantom mirror */
   function chip(target, icon, text){
     return '<span class="config-chip" data-target="' + target + '">' + icon +
-      '<span class="chip-text">' + text + '</span>' +
-      '<span class="chip-spacer" aria-hidden="true">' + icon + '</span></span>';
+      '<span class="chip-text">' + text + '</span></span>';
   }
   function updateConfigLine(){
     let html = '<div class="config-chips">' +
