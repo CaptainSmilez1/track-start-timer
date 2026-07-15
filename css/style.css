@@ -24,7 +24,40 @@ body{
 @keyframes flashBg{ 0%{ background:var(--accent); } 100%{ background:var(--bg); } }
 body.flash{ animation:flashBg .55s ease-out; }
 
+/* opening animation — a soft shockwave from the start button's position
+   (screen center, since that's where the button sits) plus every piece of
+   on-screen content popping in with a delay proportional to its distance
+   from that center, so the whole screen reads as radiating out from it */
+@keyframes launchRing{
+  0%{ transform:scale(0); opacity:.85; }
+  100%{ transform:scale(1); opacity:0; }
+}
+#launchRing{
+  position:fixed; left:50%; top:50%; width:120vmax; height:120vmax;
+  margin:-60vmax 0 0 -60vmax; border-radius:50%; pointer-events:none; z-index:1;
+  background:radial-gradient(circle, color-mix(in srgb, var(--accent) 55%, transparent) 0%, transparent 62%);
+  animation:launchRing .9s cubic-bezier(.16,.84,.44,1) both;
+}
+@keyframes popIn{
+  0%{ opacity:0; transform:scale(.5); }
+  70%{ opacity:1; }
+  100%{ opacity:1; transform:scale(1); }
+}
+@keyframes launchPop{
+  0%{ transform:scale(0); opacity:0; }
+  60%{ transform:scale(1.08); opacity:1; }
+  100%{ transform:scale(1); opacity:1; }
+}
+/* #phase keeps its permanent skewX(-4deg) baked into every step, so the
+   pop-in scale doesn't clobber it once the animation's fill-mode holds */
+@keyframes popInSkew{
+  0%{ opacity:0; transform:scale(.5) skewX(-4deg); }
+  70%{ opacity:1; }
+  100%{ opacity:1; transform:scale(1) skewX(-4deg); }
+}
+
 main{
+  position:relative; z-index:2;
   display:flex; flex-direction:column; align-items:center; gap:14px;
   padding:20px 16px calc(90px + env(safe-area-inset-bottom));
   width:100%; max-width:560px; text-align:center;
@@ -33,6 +66,7 @@ main{
   font-size:.8rem; font-weight:800; letter-spacing:.3em; text-transform:uppercase;
   color:var(--muted); transition:color .35s ease;
   display:flex; align-items:center; justify-content:center; gap:10px;
+  animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both .34s;
 }
 #eyebrow::before, #eyebrow::after{
   content:""; width:18px; height:3px; background:var(--accent); border-radius:2px; opacity:.85;
@@ -42,11 +76,13 @@ main{
   letter-spacing:.02em; text-transform:uppercase; min-height:1.1em;
   font-style:italic; transform:skewX(-4deg);
   transition:color .15s ease;
+  animation:popInSkew .5s cubic-bezier(.34,1.56,.64,1) both .27s;
 }
 #phase.go{ color:var(--accent); }
 #sub{
   font-size:clamp(1rem, 4vw, 1.3rem); color:var(--muted); min-height:1.4em;
   font-variant-numeric:tabular-nums;
+  animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both .2s;
 }
 
 #startBtn{
@@ -76,7 +112,10 @@ main{
   0%,100%{ box-shadow:0 10px 0 rgba(0,0,0,.3), 0 20px 44px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.22), inset 0 -10px 24px rgba(0,0,0,.18), 0 0 0 6px color-mix(in srgb, var(--accent) 35%, transparent); }
   50%   { box-shadow:0 10px 0 rgba(0,0,0,.3), 0 20px 44px rgba(0,0,0,.4), inset 0 2px 0 rgba(255,255,255,.22), inset 0 -10px 24px rgba(0,0,0,.18), 0 0 0 16px color-mix(in srgb, var(--accent) 12%, transparent); }
 }
-#startBtn.pulse{ animation:pulse 2.4s ease-in-out infinite; }
+#startBtn.pulse{
+  animation:pulse 2.4s ease-in-out infinite,
+            launchPop .7s cubic-bezier(.34,1.56,.64,1) both;
+}
 
 #cancelBtn{
   display:none; margin-top:8px; padding:16px 40px; border-radius:999px;
@@ -89,7 +128,10 @@ body.running #startBtn{ display:none; }
 body.running #cancelBtn{ display:inline-block; }
 body.running #configLine{ visibility:hidden; }
 
-#configLine{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+#configLine{
+  display:flex; flex-direction:column; align-items:center; gap:6px;
+  animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both .15s;
+}
 .config-chips{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
 .config-chip{
   display:inline-flex; align-items:center; gap:6px; cursor:pointer;
@@ -117,6 +159,7 @@ body.running #configLine{ visibility:hidden; }
   box-shadow:0 4px 14px rgba(0,0,0,.25);
   font-size:1.4rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
   transition:transform .12s ease, opacity .2s ease;
+  animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both .4s;
 }
 #settingsBtn:active{ transform:scale(.92); }
 #settingsBtn:disabled{ opacity:.35; }
@@ -196,14 +239,20 @@ body.settings-open #closeBtn{ display:flex; align-items:center; justify-content:
 .chip.active{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
 
 .stepper-pair{ display:flex; gap:8px; margin-bottom:6px; }
+/* Min/Max steppers get a label above the pill rather than crammed inside it —
+   at this pill width there isn't room for a label plus two full-size tap
+   targets plus the value without squeezing the value box enough to clip its
+   own digits. A label above keeps the pill itself identical (and therefore
+   just as evenly centered) to the tag-less volume stepper below. */
+.stepper-group{ flex:1; min-width:0; display:flex; flex-direction:column; gap:5px; }
+.stepper-tag{
+  font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em;
+  color:var(--muted); padding-left:2px; text-align:left;
+}
 .stepper{
   flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; gap:2px;
   background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:3px;
   box-shadow:inset 0 1px 3px rgba(0,0,0,.15);
-}
-.stepper-tag{
-  font-size:.62rem; font-weight:800; text-transform:uppercase; letter-spacing:.06em;
-  color:var(--muted); padding-left:7px; flex:0 0 auto;
 }
 .stepper-btn{
   width:34px; height:34px; flex:0 0 auto; border-radius:8px; border:none;
@@ -259,7 +308,9 @@ select{
 
 :focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
 @media (prefers-reduced-motion: reduce){
-  #startBtn.pulse{ animation:none; }
+  #startBtn.pulse{ animation:pulse 2.4s ease-in-out infinite; }
   body.flash{ animation:none; }
   #panel, #overlay{ transition:none; }
+  #launchRing{ display:none; }
+  #eyebrow, #phase, #sub, #configLine, #settingsBtn{ animation:none; }
 }
