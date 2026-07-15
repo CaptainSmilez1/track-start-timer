@@ -1,4 +1,4 @@
-const CACHE = "starta-v15";
+const CACHE = "starta-v16";
 const ASSETS = [
   "./",
   "./index.html",
