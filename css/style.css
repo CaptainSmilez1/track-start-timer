@@ -140,10 +140,10 @@ body.running #configLine{ visibility:hidden; }
 }
 body.settings-open #overlay{ opacity:1; pointer-events:auto; }
 body.settings-open #panel{ transform:translateX(0); }
+body.settings-open #closeBtn{ display:flex; align-items:center; justify-content:center; }
 
 .panel-head{
-  display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;
-  position:sticky; top:0; background:var(--panel); padding:2px 0 10px; z-index:1;
+  display:flex; align-items:center; margin-bottom:6px; padding:2px 52px 10px 0;
 }
 .panel-head h2{
   margin:0; font-size:1.25rem; font-weight:900; letter-spacing:.02em;
@@ -153,9 +153,16 @@ body.settings-open #panel{ transform:translateX(0); }
   content:""; position:absolute; left:0; top:2px; bottom:2px; width:5px;
   background:var(--accent); border-radius:3px;
 }
+/* a true sibling of #panel (not nested inside it) so its fixed position is
+   relative to the real viewport and immune to #panel's own scrolling —
+   a fixed descendant of a scrolling+transformed ancestor still scrolls
+   with that ancestor's content, which a nested version of this button did */
 #closeBtn{
+  display:none;
+  position:fixed; top:calc(18px + env(safe-area-inset-top)); right:20px; z-index:55;
   width:44px; height:44px; border-radius:50%; border:1px solid var(--line);
-  background:transparent; color:var(--fg); font-size:1.1rem; cursor:pointer;
+  background:var(--panel); color:var(--fg); font-size:1.1rem; cursor:pointer;
+  box-shadow:0 4px 14px rgba(0,0,0,.25);
   transition:transform .12s ease, background .15s ease;
 }
 #closeBtn:active{ background:var(--bg); transform:scale(.92); }
