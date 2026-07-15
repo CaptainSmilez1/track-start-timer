@@ -43,7 +43,7 @@ main{
   font-style:italic; transform:skewX(-4deg);
   transition:color .15s ease;
 }
-#phase.go{ color:var(--accent); text-shadow:0 0 28px color-mix(in srgb, var(--accent) 55%, transparent); }
+#phase.go{ color:var(--accent); }
 #sub{
   font-size:clamp(1rem, 4vw, 1.3rem); color:var(--muted); min-height:1.4em;
   font-variant-numeric:tabular-nums;
@@ -190,14 +190,11 @@ body.settings-open #closeBtn{ display:flex; align-items:center; justify-content:
   transition:background .15s ease, border-color .15s ease, transform .1s ease;
 }
 .chip:active{ transform:scale(.94); }
-.chip.active{
-  background:var(--accent); border-color:var(--accent); color:var(--accent-ink);
-  box-shadow:0 3px 10px color-mix(in srgb, var(--accent) 45%, transparent);
-}
+.chip.active{ background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
 
 .stepper-pair{ display:flex; gap:8px; margin-bottom:6px; }
 .stepper{
-  flex:1; display:flex; align-items:center; justify-content:space-between; gap:2px;
+  flex:1; min-width:0; display:flex; align-items:center; justify-content:space-between; gap:2px;
   background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:3px;
   box-shadow:inset 0 1px 3px rgba(0,0,0,.15);
 }
