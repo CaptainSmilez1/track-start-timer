@@ -64,6 +64,11 @@ main{
   padding:20px 16px calc(90px + env(safe-area-inset-bottom));
   width:100%; max-width:560px; text-align:center;
 }
+/* display:contents makes this wrapper invisible to layout in portrait —
+   eyebrow/phase/sub stay direct flex children of main, spaced by its own
+   gap, so grouping them for the landscape layout below costs nothing here.
+   Landscape turns it into a real flex column (its own left-hand stack). */
+#statusStack{ display:contents; }
 #eyebrow{
   font-size:.8rem; font-weight:800; letter-spacing:.3em; text-transform:uppercase;
   color:var(--muted); transition:color .35s ease;
@@ -375,4 +380,30 @@ body.native #proSection{ display:block; }
   #panel, #overlay{ transition:none; }
   #launchRing{ display:none; }
   #eyebrow, #phase, #sub, #configLine, #settingsBtn{ animation:none; opacity:1; }
+}
+
+/* landscape phones: the portrait stack (eyebrow → phase → sub → button →
+   chips) is taller than a landscape phone screen and was clipping the
+   eyebrow off the top with no way to reach it — overflow:hidden on body
+   allowed no scrolling at all. Below a plausible phone-landscape height,
+   switch to a side-by-side layout (status text left, button + chips
+   right) that actually fits, with scrolling kept on as a safety net for
+   any device/text combination that still doesn't. Tablets in landscape
+   (iPad and up) have far more height than this threshold and keep the
+   normal portrait-style stacked layout, centered as always. */
+@media (orientation: landscape) and (max-height: 520px){
+  body{ overflow-y:auto; padding:10px 0; }
+  main{
+    flex-direction:row; flex-wrap:wrap; align-items:center; justify-content:center;
+    gap:28px; max-width:900px;
+    padding:14px 24px calc(14px + env(safe-area-inset-bottom));
+  }
+  #statusStack{
+    display:flex; flex-direction:column; gap:10px;
+    flex:1 1 240px; min-width:200px; text-align:left; align-items:flex-start;
+  }
+  #eyebrow{ justify-content:flex-start; }
+  #phase{ font-size:clamp(1.8rem, 6vw, 3rem); }
+  #startBtn{ width:min(34vw, 46vh, 280px); }
+  #configLine{ flex:0 0 auto; }
 }
