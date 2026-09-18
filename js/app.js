@@ -261,13 +261,10 @@
     requestAnimationFrame(step);
   }
 
-  /* tapping a config-summary chip opens the panel at the top, then
-     scrolls down to center that setting (no motion at all if it's
-     already at/near the top, e.g. the Sound section). */
-  configLine.addEventListener("click", function(e){
-    const target = e.target.closest("[data-target]");
-    if(!target) return;
-    const dest = el(target.dataset.target);
+  /* opens the panel at the top, then scrolls down to center a given
+     setting (no motion at all if it's already at/near the top) — shared by
+     the config-summary chips and by tapping a locked Pro theme/sound */
+  function openPanelAndScrollTo(dest){
     if(!dest) return;
     panel.scrollTop = 0;
     openPanel();
@@ -278,6 +275,15 @@
         setTimeout(function(){ dest.classList.remove("settings-highlight"); }, 900);
       });
     }, 320); /* let the panel finish sliding in first */
+  }
+
+  /* tapping a config-summary chip opens the panel at the top, then
+     scrolls down to center that setting (no motion at all if it's
+     already at/near the top, e.g. the Sound section). */
+  configLine.addEventListener("click", function(e){
+    const target = e.target.closest("[data-target]");
+    if(!target) return;
+    openPanelAndScrollTo(el(target.dataset.target));
   });
 
   /* swipe right anywhere on the panel to dismiss it, same as tapping the
@@ -304,6 +310,11 @@
     soundSel.appendChild(o);
   });
   soundSel.addEventListener("change", function(){
+    if(isSoundLocked(soundSel.value)){
+      soundSel.value = S.sound; /* revert the native select's own selection */
+      presentPaywall();
+      return;
+    }
     S.sound = soundSel.value; saveSettings(); updateConfigLine();
     unlockAudio(S.sound); SOUNDS[S.sound].play();
   });
@@ -391,6 +402,101 @@
     updateConfigLine(); saveSettings();
   });
 
+  /* ---------- Starta Pro (in-app purchase) ----------
+     A single non-consumable unlock (all themes + custom color + the full
+     sound pack) via RevenueCat wrapping native StoreKit — native-only, the
+     free web version never gates anything since StoreKit doesn't exist in
+     a browser and this app has always been free there. Apple requires any
+     purchase that unlocks content/features used inside the app to go
+     through their own purchase system (App Store Review Guideline 3.1.1);
+     Stripe or any other processor isn't allowed for this. */
+  const FREE_THEMES = ["track"];
+  const FREE_SOUNDS = ["bang", "buzzer"];
+  const PRO_ENTITLEMENT_ID = "pro";
+  const REVENUECAT_API_KEY_IOS = "YOUR_REVENUECAT_PUBLIC_IOS_API_KEY"; /* set from the RevenueCat dashboard before shipping */
+  const Purchases = isNative && window.Capacitor.Plugins ? window.Capacitor.Plugins.Purchases : null;
+  const ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+  let isPro = false;
+  let proPackage = null; /* cached purchasable package, for price display + purchasing */
+  if(isNative) body.classList.add("native");
+
+  function isThemeLocked(name){ return isNative && !isPro && FREE_THEMES.indexOf(name) === -1; }
+  function isSoundLocked(key){ return isNative && !isPro && FREE_SOUNDS.indexOf(key) === -1; }
+  function presentPaywall(){ if(isNative) openPanelAndScrollTo(el("proSection")); }
+
+  function lockBadge(container){
+    let badge = container.querySelector(".lock-badge");
+    if(!badge){
+      badge = document.createElement("span");
+      badge.className = "lock-badge"; badge.innerHTML = ICON_LOCK;
+      container.appendChild(badge);
+    }
+    return badge;
+  }
+
+  function renderProGates(){
+    themesWrap.querySelectorAll(".theme-option").forEach(function(opt){
+      const locked = isThemeLocked(opt.dataset.theme);
+      opt.classList.toggle("locked", locked);
+      const swatch = opt.querySelector(".swatch");
+      if(locked) lockBadge(swatch);
+      else{ const b = swatch.querySelector(".lock-badge"); if(b) b.remove(); }
+    });
+    const customLocked = isNative && !isPro;
+    customColorRow.classList.toggle("locked", customLocked);
+    const swatchEl = el("customColorSwatch");
+    if(customLocked) lockBadge(swatchEl);
+    else{ const b = swatchEl.querySelector(".lock-badge"); if(b) b.remove(); }
+
+    Array.prototype.forEach.call(soundSel.options, function(o){
+      o.textContent = SOUNDS[o.value].label + (isSoundLocked(o.value) ? " (Pro)" : "");
+    });
+
+    el("proStatus").hidden = !isPro;
+    el("proUnlockBtn").hidden = isPro;
+    el("proRestoreBtn").hidden = isPro;
+  }
+
+  function initPurchases(){
+    if(!Purchases) return;
+    Purchases.configure({ apiKey: REVENUECAT_API_KEY_IOS })
+      .then(function(){ return Purchases.getCustomerInfo(); })
+      .then(function(res){
+        const info = res && res.customerInfo;
+        isPro = !!(info && info.entitlements && info.entitlements.active && info.entitlements.active[PRO_ENTITLEMENT_ID]);
+        renderProGates();
+      })
+      .catch(function(){ /* offline or not yet configured — stays locked, no crash */ });
+    Purchases.getOfferings().then(function(res){
+      const offering = res && res.offerings && res.offerings.current;
+      const pkg = offering && offering.availablePackages && offering.availablePackages[0];
+      if(pkg){
+        proPackage = pkg;
+        el("proPrice").textContent = (pkg.product && pkg.product.priceString) || "";
+      }
+    }).catch(function(){});
+  }
+
+  el("proUnlockBtn").addEventListener("click", function(){
+    if(!Purchases || !proPackage) return;
+    Purchases.purchasePackage({
+      packageIdentifier: proPackage.identifier,
+      offeringIdentifier: proPackage.offeringIdentifier
+    }).then(function(res){
+      const info = res && res.customerInfo;
+      isPro = !!(info && info.entitlements && info.entitlements.active && info.entitlements.active[PRO_ENTITLEMENT_ID]);
+      renderProGates();
+    }).catch(function(){ /* user cancelled, or purchase failed — nothing to do */ });
+  });
+  el("proRestoreBtn").addEventListener("click", function(){
+    if(!Purchases) return;
+    Purchases.restorePurchases().then(function(res){
+      const info = res && res.customerInfo;
+      isPro = !!(info && info.entitlements && info.entitlements.active && info.entitlements.active[PRO_ENTITLEMENT_ID]);
+      renderProGates();
+    }).catch(function(){});
+  });
+
   /* themes */
   const THEMES = {
     track:    { color: "#c8451f", label: "Track" },
@@ -409,6 +515,7 @@
     opt.setAttribute("aria-label", t.label + " theme");
     opt.innerHTML = '<span class="swatch" style="background:' + t.color + '"></span><span class="theme-name">' + t.label + "</span>";
     opt.addEventListener("click", function(){
+      if(isThemeLocked(name)){ presentPaywall(); return; }
       S.theme = name; applyTheme(); saveSettings();
     });
     themesWrap.appendChild(opt);
@@ -425,6 +532,13 @@
   const customColorInput = el("customColorInput");
   const customColorRow = el("customColorRow");
   const customColorHex = el("customColorHex");
+  const customColorSwatch = el("customColorSwatch");
+  /* the label's default action opens the native color picker — intercept
+     that with preventDefault() while locked, same idea as the theme/sound
+     gates, instead of letting it open then having to undo a color pick */
+  customColorSwatch.addEventListener("click", function(e){
+    if(isNative && !isPro){ e.preventDefault(); presentPaywall(); }
+  });
   customColorInput.addEventListener("input", function(){
     S.theme = "custom"; S.customAccent = customColorInput.value;
     applyTheme(); saveSettings();
@@ -493,6 +607,8 @@
   /* ---------- init ---------- */
   loadSettings().then(function(){
     syncInputs(); applyTheme(); updateConfigLine();
+    renderProGates(); /* dims locked themes/sounds immediately, before the purchase check returns */
+    initPurchases();
   });
 
   /* ---------- PWA service worker ---------- */

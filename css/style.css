@@ -347,6 +347,25 @@ select{
   font-size:.75rem; font-weight:700; color:var(--muted); letter-spacing:.02em;
   font-variant-numeric:tabular-nums; text-transform:uppercase; margin-top:2px;
 }
+
+/* Pro paywall gating — only ever shown/active inside the native app, since
+   StoreKit purchases don't exist on the web; the free web version never
+   renders any of this and every theme/sound stays unlocked there */
+.theme-option.locked .swatch, #customColorRow.locked #customColorSwatch{ opacity:.45; }
+.theme-option.locked .swatch::after, #customColorRow.locked #customColorSwatch::after{
+  content:""; position:absolute; inset:0; border-radius:50%;
+  background:rgba(0,0,0,.4);
+}
+.lock-badge{
+  position:absolute; right:-2px; bottom:-2px; width:18px; height:18px; border-radius:50%;
+  background:var(--panel); border:1px solid var(--line); color:var(--fg);
+  display:flex; align-items:center; justify-content:center; pointer-events:none;
+}
+.lock-badge svg{ width:10px; height:10px; }
+#proSection{ display:none; }
+body.native #proSection{ display:block; }
+#proStatus{ color:var(--accent); font-weight:700; }
+
 #resetBtn{ width:100%; margin-top:4px; }
 
 :focus-visible{ outline:3px solid var(--accent); outline-offset:2px; }
