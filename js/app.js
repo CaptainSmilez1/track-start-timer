@@ -7,7 +7,8 @@
     marksMin: 4, marksMax: 7,
     setMin: 1.5, setMax: 2.6,
     headStart: false, headGap: 3,
-    customAccent: "#c8451f"
+    customAccent: "#c8451f",
+    proRedeemed: false
   };
   let S = Object.assign({}, DEFAULTS);
 
@@ -417,6 +418,13 @@
   const FREE_SOUNDS = ["bang", "buzzer"];
   const PRO_ENTITLEMENT_ID = "pro";
   const REVENUECAT_API_KEY_IOS = "YOUR_REVENUECAT_PUBLIC_IOS_API_KEY"; /* set from the RevenueCat dashboard before shipping */
+  /* RevenueCat isn't configured yet (placeholder key above) — rather than
+     ship a purchase button that silently can't work, this release unlocks
+     Pro via a redemption code instead. Once RevenueCat is set up for real,
+     flip this to true and the purchase UI (already built below) takes
+     over automatically — nothing else to change. */
+  const PAYMENTS_ENABLED = false;
+  const PRO_REDEEM_CODE = "STARTAPRO";
   const Purchases = isNative && window.Capacitor.Plugins ? window.Capacitor.Plugins.Purchases : null;
   const ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
   let isPro = false;
@@ -456,12 +464,27 @@
     });
 
     el("proStatus").hidden = !isPro;
-    el("proUnlockBtn").hidden = isPro;
-    el("proRestoreBtn").hidden = isPro;
+    el("proUnlockBtn").hidden = !PAYMENTS_ENABLED || isPro;
+    el("proRestoreBtn").hidden = !PAYMENTS_ENABLED || isPro;
+    el("proCodeRow").hidden = PAYMENTS_ENABLED || isPro;
   }
 
+  const proCodeInput = el("proCodeInput");
+  el("proRedeemBtn").addEventListener("click", function(){
+    const entered = (proCodeInput.value || "").trim().toUpperCase();
+    const codeError = el("proCodeError");
+    if(entered && entered === PRO_REDEEM_CODE){
+      isPro = true; S.proRedeemed = true; saveSettings();
+      codeError.hidden = true;
+      proCodeInput.value = "";
+      renderProGates();
+    }else{
+      codeError.hidden = false;
+    }
+  });
+
   function initPurchases(){
-    if(!Purchases) return;
+    if(!PAYMENTS_ENABLED || !Purchases) return;
     Purchases.configure({ apiKey: REVENUECAT_API_KEY_IOS })
       .then(function(){ return Purchases.getCustomerInfo(); })
       .then(function(res){
@@ -567,7 +590,8 @@
   /* reset */
   el("resetBtn").addEventListener("click", function(){
     S = Object.assign({}, DEFAULTS);
-    syncInputs(); applyTheme(); updateConfigLine(); saveSettings();
+    isPro = false; /* re-lock a code-redeemed unlock too — "reset" means reset */
+    syncInputs(); applyTheme(); updateConfigLine(); renderProGates(); saveSettings();
   });
 
   /* config summary on the main screen — compact icon chips instead of a sentence */
@@ -610,6 +634,7 @@
   /* ---------- init ---------- */
   loadSettings().then(function(){
     syncInputs(); applyTheme(); updateConfigLine();
+    if(S.proRedeemed) isPro = true; /* code-redeemed unlock persists across launches */
     renderProGates(); /* dims locked themes/sounds immediately, before the purchase check returns */
     initPurchases();
   });
