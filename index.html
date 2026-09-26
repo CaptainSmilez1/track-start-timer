@@ -161,6 +161,17 @@
     <p class="hint" id="proStatus" hidden>✓ Starta Pro is unlocked on this device.</p>
   </section>
 
+  <section id="hazardSection">
+    <h3><span class="h3-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></svg></span>Got a code?</h3>
+    <p class="hint" style="margin-top:0">Some codes unlock a hidden theme, not part of Starta Pro.</p>
+    <div class="row" id="hazardCodeRow">
+      <input type="text" id="hazardCodeInput" placeholder="Enter code" autocapitalize="characters" autocorrect="off" spellcheck="false">
+      <button class="btn" id="hazardRedeemBtn">Redeem</button>
+    </div>
+    <p class="hint" id="hazardCodeError" hidden>That code isn't valid — check for typos and try again.</p>
+    <p class="hint" id="hazardStatus" hidden>✓ A hidden theme has been unlocked.</p>
+  </section>
+
   <button class="btn" id="resetBtn">Reset to defaults</button>
   </div>
 </aside>
