@@ -1,13 +1,27 @@
 import UIKit
 import Capacitor
+import AVFoundation
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
+    /* Speech synthesis (used for the "On your marks"/"Set" cues) quietly
+       reconfigures the shared AVAudioSession on real devices, which leaves
+       the starter sound that fires right after noticeably quieter than the
+       same sound played directly (e.g. from the Test button, which never
+       speaks first). Forcing the session back to a plain .playback category
+       — not mixed/ducked — restores full volume for native audio. */
+    private func activateFullVolumeAudioSession() {
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, options: [])
+        try? session.setActive(true)
+    }
+
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        activateFullVolumeAudioSession()
         return true
     }
 
@@ -27,6 +41,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationDidBecomeActive(_ application: UIApplication) {
         // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
+        activateFullVolumeAudioSession()
     }
 
     func applicationWillTerminate(_ application: UIApplication) {
