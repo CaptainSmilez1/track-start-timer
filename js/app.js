@@ -429,7 +429,7 @@
   /* Hazard is its own separate secret, independent of Starta Pro entirely —
      hidden from the theme grid until its own distinct code is redeemed,
      not just locked-and-visible like the rest of the Pro bundle */
-  const HAZARD_REDEEM_CODE = "HAZARDMODE";
+  const HAZARD_REDEEM_CODE = "CHUCK";
   const Purchases = isNative && window.Capacitor.Plugins ? window.Capacitor.Plugins.Purchases : null;
   const ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
   let isPro = false;
@@ -557,7 +557,7 @@
     field:    { color: "#34d399", label: "Field" },
     sunset:   { color: "#fb923c", label: "Sunset" },
     daylight: { color: "#f4f6fb", label: "Daylight" },
-    hazard:   { color: "#f4c81a", label: "Hazard" }
+    hazard:   { color: "#f4c81a", label: "GSTC" }
   };
   const themesWrap = el("themes");
   function addThemeSwatch(name){
