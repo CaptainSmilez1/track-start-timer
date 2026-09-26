@@ -3,7 +3,7 @@
 
   /* ---------- settings ---------- */
   const DEFAULTS = {
-    volume: 0.85, theme: "track", sound: "bang",
+    volume: 1, theme: "track", sound: "bang",
     marksMin: 4, marksMax: 7,
     setMin: 1.5, setMax: 2.6,
     headStart: false, headGap: 3,
@@ -62,6 +62,18 @@
      sound meaningfully louder than "half", not barely audible */
   function vol(){ return Math.pow(S.volume, 0.55); }
 
+  /* volume is pushed to the native player ahead of time (on preload and
+     whenever the slider changes), never at the moment of play() — that
+     used to fire setVolume() and play() as two separate native bridge
+     calls back-to-back right when the "Go" signal needed to fire, adding
+     a second round-trip of latency at exactly the worst possible moment */
+  function applyNativeVolumes(){
+    if(!NativeAudio) return;
+    Object.keys(SOUND_FILES).forEach(function(key){
+      NativeAudio.setVolume({ assetId: key, volume: Math.max(0.1, Math.min(1, vol())) }).catch(function(){});
+    });
+  }
+
   const audioEls = {};
   if(NativeAudio){
     Object.keys(SOUND_FILES).forEach(function(key){
@@ -73,6 +85,7 @@
         audioChannelNum: 1, isUrl: false
       }).catch(function(){});
     });
+    applyNativeVolumes();
   }else{
     Object.keys(SOUND_FILES).forEach(function(key){
       const a = new Audio(SOUND_FILES[key]);
@@ -99,7 +112,9 @@
 
   function playFile(key){
     if(NativeAudio){
-      NativeAudio.setVolume({ assetId: key, volume: Math.max(0.1, Math.min(1, vol())) }).catch(function(){}); /* plugin's documented range is 0.1-1.0 */
+      /* volume is already set ahead of time via applyNativeVolumes() — a
+         single play() call here, not a setVolume()+play() pair, matters
+         right at this exact moment: this fires the instant "Go" appears */
       NativeAudio.play({ assetId: key }).catch(function(){});
       return;
     }
@@ -343,7 +358,7 @@
     btn.addEventListener("click", function(){
       const v = Math.min(100, Math.max(0, Math.round(S.volume * 100) + (+btn.dataset.dir) * 5));
       S.volume = v / 100;
-      renderVol(); saveSettings();
+      renderVol(); saveSettings(); applyNativeVolumes();
     });
   });
 
@@ -675,6 +690,7 @@
       el("hazardStatus").hidden = false;
     }
     syncInputs(); applyTheme(); updateConfigLine();
+    applyNativeVolumes(); /* the initial call above ran before settings loaded, so the real saved volume wasn't applied yet */
     if(S.proRedeemed) isPro = true; /* code-redeemed unlock persists across launches */
     renderProGates(); /* dims locked themes/sounds immediately, before the purchase check returns */
     initPurchases();
