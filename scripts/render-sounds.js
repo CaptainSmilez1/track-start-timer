@@ -283,11 +283,29 @@ function renderWhistle(){
   return finish(buf);
 }
 
+/* Real iOS devices often play the very first native sound after an idle
+   gap "muffled"/quiet — the speaker amp hasn't been woken up yet, and it
+   ramps up mid-playback instead of before it. Playing this silent-ish blip
+   a few seconds ahead of the real starter sound (as soon as the sequence
+   begins) wakes the audio hardware early, so by the time the real sound
+   fires the amp is already warm. Deliberately NOT run through finish()'s
+   loud RMS normalization — this should be as close to inaudible as
+   possible while still being real audio output. */
+function renderPrimer(){
+  const dur = 0.12;
+  const buf = whiteNoise(dur);
+  multiply(buf, attackDecayEnv(buf.length, 0.01));
+  for(let i = 0; i < buf.length; i++) buf[i] *= 0.03;
+  fadeEdges(buf, 5, 30);
+  return buf;
+}
+
 const outDir = path.join(__dirname, "..", "sounds");
 fs.mkdirSync(outDir, { recursive: true });
 const sounds = {
   bang: renderBang, horn: renderHorn, quack: renderQuack,
-  boing: renderBoing, goat: renderGoat, buzzer: renderBuzzer, whistle: renderWhistle
+  boing: renderBoing, goat: renderGoat, buzzer: renderBuzzer, whistle: renderWhistle,
+  primer: renderPrimer
 };
 for(const [name, fn] of Object.entries(sounds)){
   writeWav(path.join(outDir, name + ".wav"), fn());
