@@ -244,6 +244,10 @@ body.settings-open #closeBtn{ display:flex; align-items:center; justify-content:
   margin:0 0 8px; color:var(--fg);
 }
 .row{ display:flex; gap:10px; align-items:center; }
+/* .row's own display:flex otherwise beats the browser's default
+   [hidden]{display:none} at equal specificity, so a hidden .row would
+   stay visible — this restores hidden actually hiding it */
+.row[hidden]{ display:none; }
 
 /* stepper controls — big tap targets instead of fiddly sliders */
 .chips{ display:flex; gap:8px; flex-wrap:wrap; margin:0 0 10px; }
@@ -288,6 +292,12 @@ select{
   flex:1; padding:12px; font-size:1rem; font-family:inherit;
   background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:10px;
 }
+#proCodeInput{
+  flex:1; padding:12px; font-size:1rem; font-family:inherit; letter-spacing:.05em;
+  background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:10px;
+  text-transform:uppercase;
+}
+#proCodeInput::placeholder{ text-transform:none; color:var(--muted); letter-spacing:normal; }
 .btn{
   padding:12px 18px; border-radius:10px; border:1px solid var(--line);
   background:var(--panel); color:var(--fg); font-family:inherit; font-size:.95rem; font-weight:700; cursor:pointer;
