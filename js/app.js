@@ -85,6 +85,11 @@
         audioChannelNum: 1, isUrl: false
       }).catch(function(){});
     });
+    NativeAudio.preload({
+      assetId: "primer", assetPath: "primer.wav",
+      audioChannelNum: 1, isUrl: false
+    }).catch(function(){});
+    NativeAudio.setVolume({ assetId: "primer", volume: 0.05 }).catch(function(){});
     applyNativeVolumes();
   }else{
     Object.keys(SOUND_FILES).forEach(function(key){
@@ -187,6 +192,13 @@
   function startSequence(){
     if(running) return;
     unlockAudio(); /* unlock sound on this user tap */
+    if(NativeAudio){
+      /* wake the speaker amp now, several seconds before the real starter
+         sound fires — on real devices the first sound played after an idle
+         gap can come out muffled/quiet because the hardware ramps up mid-
+         playback instead of before it */
+      NativeAudio.play({ assetId: "primer" }).catch(function(){});
+    }
     setRunningUI(true);
     setPhase("On your marks", "Take your positions");
     speak("On your marks");
@@ -198,6 +210,7 @@
   }
 
   function fire(){
+    applyNativeVolumes(); /* re-assert full volume right before the real sound — guards against mid-sequence audio-session drift from the "On your marks"/"Set" speech */
     SOUNDS[S.sound].play();
     flash();
     if(S.headStart){
