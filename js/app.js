@@ -63,8 +63,11 @@
   const audioEls = {};
   if(NativeAudio){
     Object.keys(SOUND_FILES).forEach(function(key){
+      /* the plugin already assumes ios/App/App/sounds (Android: assets) as
+         the base folder per its own docs — assetPath is just the bare
+         filename, not prefixed with "sounds/" again */
       NativeAudio.preload({
-        assetId: key, assetPath: "sounds/" + key + ".wav",
+        assetId: key, assetPath: key + ".wav",
         audioChannelNum: 1, isUrl: false
       }).catch(function(){});
     });
