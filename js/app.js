@@ -8,7 +8,8 @@
     setMin: 1.5, setMax: 2.6,
     headStart: false, headGap: 3,
     customAccent: "#c8451f",
-    proRedeemed: false
+    proRedeemed: false,
+    hazardRedeemed: false
   };
   let S = Object.assign({}, DEFAULTS);
 
@@ -425,13 +426,20 @@
      over automatically — nothing else to change. */
   const PAYMENTS_ENABLED = false;
   const PRO_REDEEM_CODE = "STARTAPRO";
+  /* Hazard is its own separate secret, independent of Starta Pro entirely —
+     hidden from the theme grid until its own distinct code is redeemed,
+     not just locked-and-visible like the rest of the Pro bundle */
+  const HAZARD_REDEEM_CODE = "HAZARDMODE";
   const Purchases = isNative && window.Capacitor.Plugins ? window.Capacitor.Plugins.Purchases : null;
   const ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
   let isPro = false;
   let proPackage = null; /* cached purchasable package, for price display + purchasing */
   if(isNative) body.classList.add("native");
 
-  function isThemeLocked(name){ return isNative && !isPro && FREE_THEMES.indexOf(name) === -1; }
+  /* hazard is never part of the Starta Pro lock/paywall — it's excluded
+     here because by the time its swatch exists in the DOM at all, it's
+     already been unlocked via its own separate secret code */
+  function isThemeLocked(name){ return name !== "hazard" && isNative && !isPro && FREE_THEMES.indexOf(name) === -1; }
   function isSoundLocked(key){ return isNative && !isPro && FREE_SOUNDS.indexOf(key) === -1; }
   function presentPaywall(){ if(isNative) openPanelAndScrollTo(el("proSection")); }
 
@@ -478,6 +486,24 @@
       codeError.hidden = true;
       proCodeInput.value = "";
       renderProGates();
+    }else{
+      codeError.hidden = false;
+    }
+  });
+
+  /* Hazard's own separate secret — a distinct code from Starta Pro's,
+     unlocking just this one theme rather than the whole bundle */
+  const hazardCodeInput = el("hazardCodeInput");
+  el("hazardRedeemBtn").addEventListener("click", function(){
+    const entered = (hazardCodeInput.value || "").trim().toUpperCase();
+    const codeError = el("hazardCodeError");
+    if(entered && entered === HAZARD_REDEEM_CODE){
+      S.hazardRedeemed = true; saveSettings();
+      addThemeSwatch("hazard");
+      codeError.hidden = true;
+      hazardCodeInput.value = "";
+      el("hazardStatus").hidden = false;
+      el("hazardCodeRow").hidden = true;
     }else{
       codeError.hidden = false;
     }
@@ -534,7 +560,8 @@
     hazard:   { color: "#f4c81a", label: "Hazard" }
   };
   const themesWrap = el("themes");
-  Object.keys(THEMES).forEach(function(name){
+  function addThemeSwatch(name){
+    if(themesWrap.querySelector('[data-theme="' + name + '"]')) return; /* already added */
     const t = THEMES[name];
     const opt = document.createElement("button");
     opt.className = "theme-option"; opt.dataset.theme = name;
@@ -545,6 +572,11 @@
       S.theme = name; applyTheme(); saveSettings();
     });
     themesWrap.appendChild(opt);
+    return opt;
+  }
+  Object.keys(THEMES).forEach(function(name){
+    if(name === "hazard") return; /* settings haven't loaded yet here — added later in init if already redeemed */
+    addThemeSwatch(name);
   });
   /* readable text color for a given background — plain luminance heuristic,
      no need for full sRGB gamma correction at this scale */
@@ -591,6 +623,10 @@
   el("resetBtn").addEventListener("click", function(){
     S = Object.assign({}, DEFAULTS);
     isPro = false; /* re-lock a code-redeemed unlock too — "reset" means reset */
+    const hazardSwatch = themesWrap.querySelector('[data-theme="hazard"]');
+    if(hazardSwatch) hazardSwatch.remove(); /* hide it again, matching "hidden until redeemed" */
+    el("hazardCodeRow").hidden = false;
+    el("hazardStatus").hidden = true;
     syncInputs(); applyTheme(); updateConfigLine(); renderProGates(); saveSettings();
   });
 
@@ -633,6 +669,11 @@
 
   /* ---------- init ---------- */
   loadSettings().then(function(){
+    if(S.hazardRedeemed){
+      addThemeSwatch("hazard"); /* before applyTheme, so its active state renders correctly */
+      el("hazardCodeRow").hidden = true;
+      el("hazardStatus").hidden = false;
+    }
     syncInputs(); applyTheme(); updateConfigLine();
     if(S.proRedeemed) isPro = true; /* code-redeemed unlock persists across launches */
     renderProGates(); /* dims locked themes/sounds immediately, before the purchase check returns */
