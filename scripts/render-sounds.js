@@ -159,11 +159,21 @@ function normalizeRMS(samples, targetRMS){
    normalized to the same value can still sound very different in volume.
    softClip afterwards catches any peaks RMS-matching pushes over 0dBFS. */
 const TARGET_RMS = 0.7; /* pushed louder again — needs to carry outdoors from a distance, not just sound clear up close */
+/* Real devices need a moment after any prior audio-session activity (the
+   On your marks/Set speech, or even our own priming blip) before playback
+   actually engages — without a cushion, the first ~50-100ms of the real
+   sound can get truncated/skipped instead of just played quietly. A short
+   true-silence lead-in absorbs that instead of eating the sound's onset. */
+const LEAD_IN_SEC = 0.09;
 function finish(samples){
   fadeEdges(samples, 1, 8);
   normalizeRMS(samples, TARGET_RMS);
   softClip(samples, 1.5);
-  return samples;
+  const lead = zeros(secToSamples(LEAD_IN_SEC));
+  const out = new Float64Array(lead.length + samples.length);
+  out.set(lead, 0);
+  out.set(samples, lead.length);
+  return out;
 }
 
 /* ================= sound designs ================= */
