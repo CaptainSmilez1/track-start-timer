@@ -57,6 +57,13 @@
   };
   const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   const NativeAudio = isNative && window.Capacitor.Plugins ? window.Capacitor.Plugins.NativeAudio : null;
+  /* @capacitor-community/native-audio deactivates the shared iOS audio
+     session once at launch and never explicitly reactivates it — every
+     sound since then relies on iOS silently auto-reactivating it, which
+     races unpredictably against the "On your marks"/"Set" speech's own
+     session use. AudioSessionFix (native/AudioSessionFix.swift) forces it
+     back to a known-good active state on demand, deterministically. */
+  const AudioSessionFix = isNative && window.Capacitor.Plugins ? window.Capacitor.Plugins.AudioSessionFix : null;
 
   /* perceptual (roughly logarithmic) taper — a mid slider position should
      sound meaningfully louder than "half", not barely audible */
@@ -210,19 +217,15 @@
   }
 
   function fire(){
-    if(NativeAudio){
-      /* re-engage the native audio session right before the real sound —
-         the "On your marks"/"Set" speech can leave it in a state where the
-         very next sound plays quieter or has its first ~100ms skipped.
-         The gap before the real sound has to clear the primer's own
-         ~120ms runtime (plus native-bridge dispatch latency) with real
-         margin — too short a gap (90ms was tried and wasn't enough) means
-         the primer's own tail is still sounding when the real sound
-         starts, smearing directly into and muffling its onset instead of
-         fixing anything. */
-      NativeAudio.play({ assetId: "primer" }).catch(function(){});
-      applyNativeVolumes();
-      schedule(doFire, 260);
+    if(NativeAudio && AudioSessionFix){
+      /* force the audio session back to a known-good active state right
+         before the real sound — deterministic (chained on the native
+         call's own promise), not a guessed delay racing against however
+         long iOS actually takes to settle after the speech cues */
+      AudioSessionFix.reactivate().catch(function(){}).then(function(){
+        applyNativeVolumes();
+        doFire();
+      });
     }else{
       doFire();
     }
