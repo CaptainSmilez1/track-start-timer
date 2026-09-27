@@ -292,12 +292,16 @@ select{
   flex:1; padding:12px; font-size:1rem; font-family:inherit;
   background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:10px;
 }
-#proCodeInput{
+.code-input{
   flex:1; padding:12px; font-size:1rem; font-family:inherit; letter-spacing:.05em;
   background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:10px;
   text-transform:uppercase;
 }
-#proCodeInput::placeholder{ text-transform:none; color:var(--muted); letter-spacing:normal; }
+.code-input::placeholder{ text-transform:none; color:var(--muted); letter-spacing:normal; }
+/* contained focus ring — the shared :focus-visible outline below flares
+   outward past the box's own edge, which reads as the box itself growing
+   when tapped; an inset shadow stays fully inside the existing footprint */
+.code-input:focus{ outline:none; border-color:var(--accent); box-shadow:inset 0 0 0 2px var(--accent); }
 .btn{
   padding:12px 18px; border-radius:10px; border:1px solid var(--line);
   background:var(--panel); color:var(--fg); font-family:inherit; font-size:.95rem; font-weight:700; cursor:pointer;
