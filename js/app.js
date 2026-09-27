@@ -57,13 +57,6 @@
   };
   const isNative = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
   const NativeAudio = isNative && window.Capacitor.Plugins ? window.Capacitor.Plugins.NativeAudio : null;
-  /* @capacitor-community/native-audio deactivates the shared iOS audio
-     session once at launch and never explicitly reactivates it — every
-     sound since then relies on iOS silently auto-reactivating it, which
-     races unpredictably against the "On your marks"/"Set" speech's own
-     session use. AudioSessionFix (native/AudioSessionFix.swift) forces it
-     back to a known-good active state on demand, deterministically. */
-  const AudioSessionFix = isNative && window.Capacitor.Plugins ? window.Capacitor.Plugins.AudioSessionFix : null;
 
   /* perceptual (roughly logarithmic) taper — a mid slider position should
      sound meaningfully louder than "half", not barely audible */
@@ -216,22 +209,14 @@
     }, rand(S.marksMin, S.marksMax) * 1000);
   }
 
+  /* fire() plays the exact same way the Test button does — no primer, no
+     session reactivation, no extra volume call right before playing.
+     Every one of those "fixes" added complexity around this call without
+     reliably solving anything, while Test (which has always just been
+     this one line) has been reliable the whole time. If the real sound
+     still isn't consistent with this exact path, the difference isn't
+     anything code can see or control from here. */
   function fire(){
-    if(NativeAudio && AudioSessionFix){
-      /* force the audio session back to a known-good active state right
-         before the real sound — deterministic (chained on the native
-         call's own promise), not a guessed delay racing against however
-         long iOS actually takes to settle after the speech cues */
-      AudioSessionFix.reactivate().catch(function(){}).then(function(){
-        applyNativeVolumes();
-        doFire();
-      });
-    }else{
-      doFire();
-    }
-  }
-
-  function doFire(){
     SOUNDS[S.sound].play();
     flash();
     if(S.headStart){
