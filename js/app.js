@@ -313,7 +313,13 @@
      the config-summary chips and by tapping a locked Pro theme/sound */
   function openPanelAndScrollTo(dest){
     if(!dest) return;
-    panel.scrollTop = 0;
+    /* only snap to top before the animated scroll if the panel was closed
+       (a fresh open always starts at the top anyway) — if it's already
+       open, snapping to 0 first makes it visibly jump to the top before
+       scrolling back down to the target, instead of one smooth motion
+       from wherever it already was */
+    const alreadyOpen = body.classList.contains("settings-open");
+    if(!alreadyOpen) panel.scrollTop = 0;
     openPanel();
     const desired = Math.max(0, dest.offsetTop - (panel.clientHeight - dest.offsetHeight) / 2);
     setTimeout(function(){
@@ -321,7 +327,7 @@
         dest.classList.add("settings-highlight");
         setTimeout(function(){ dest.classList.remove("settings-highlight"); }, 900);
       });
-    }, 320); /* let the panel finish sliding in first */
+    }, alreadyOpen ? 0 : 320); /* let the panel finish sliding in first, unless it already was */
   }
 
   /* tapping a config-summary chip opens the panel at the top, then
