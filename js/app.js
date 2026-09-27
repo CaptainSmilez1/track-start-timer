@@ -214,11 +214,15 @@
       /* re-engage the native audio session right before the real sound —
          the "On your marks"/"Set" speech can leave it in a state where the
          very next sound plays quieter or has its first ~100ms skipped.
-         A tiny gap after this before the real sound gives the session a
-         moment to actually settle instead of colliding with it. */
+         The gap before the real sound has to clear the primer's own
+         ~120ms runtime (plus native-bridge dispatch latency) with real
+         margin — too short a gap (90ms was tried and wasn't enough) means
+         the primer's own tail is still sounding when the real sound
+         starts, smearing directly into and muffling its onset instead of
+         fixing anything. */
       NativeAudio.play({ assetId: "primer" }).catch(function(){});
       applyNativeVolumes();
-      schedule(doFire, 90);
+      schedule(doFire, 260);
     }else{
       doFire();
     }
