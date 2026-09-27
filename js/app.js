@@ -210,7 +210,21 @@
   }
 
   function fire(){
-    applyNativeVolumes(); /* re-assert full volume right before the real sound — guards against mid-sequence audio-session drift from the "On your marks"/"Set" speech */
+    if(NativeAudio){
+      /* re-engage the native audio session right before the real sound —
+         the "On your marks"/"Set" speech can leave it in a state where the
+         very next sound plays quieter or has its first ~100ms skipped.
+         A tiny gap after this before the real sound gives the session a
+         moment to actually settle instead of colliding with it. */
+      NativeAudio.play({ assetId: "primer" }).catch(function(){});
+      applyNativeVolumes();
+      schedule(doFire, 90);
+    }else{
+      doFire();
+    }
+  }
+
+  function doFire(){
     SOUNDS[S.sound].play();
     flash();
     if(S.headStart){
