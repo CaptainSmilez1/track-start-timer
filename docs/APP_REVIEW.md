@@ -38,50 +38,42 @@ You don't need account registration, login, account deletion, or UGC reporting/b
 
 ## 2. Purpose and target audience
 
-**Starta** is a starter's-pistol simulator for track and field practice. It runs the "On your marks… Set… GO!" start sequence with spoken commands and a starter sound. The gaps between commands are randomised within ranges the user sets.
-
-- **Problem it solves:** in practice, a coach or teammate calling starts out loud gets predictable, so sprinters learn the rhythm and anticipate the gun instead of reacting to it. Solo athletes have no one to start them at all. Real starter pistols and electronic start systems are expensive and often restricted.
-- **Value:** you get an unpredictable start, like a race, from a phone. You can tune it to official timing ("Set" → gun of about 1.5–2.5 s) or to quick, long or fixed drills. A head-start mode fires a second, delayed signal for handicap or chase starts. It works fully offline.
-- **Target audience:** sprinters, hurdlers and relay athletes. Also high-school, college and club track coaches, and parents or volunteers running practice. It also works for any sport that drills reaction starts, such as swimming or football sprints.
-
----
-
-## 3. Setup and access instructions (paste into "Notes")
-
-> Starta needs no account, login, or sample files. All features are on one screen plus a Settings panel.
+> Starta is a starting gun for track practice. You hit Start, it calls "On your marks" and "Set" out loud, and then it fires. The catch is that the pauses between those calls are random every time, so you can't guess when the gun is coming.
 >
-> - Tap **START** to run a randomised "On your marks / Set / GO!" start sequence. Tap **Cancel** to stop it. Please turn the ringer switch on and raise the volume to hear the signals.
-> - Tap the **gear icon** (top right) for Settings: volume, start-signal sound (**Test** previews it), timing ranges and presets, Head start (a second delayed signal), and colour themes.
-> - **Paid content:** "Starta Pro" is a one-time non-consumable In-App Purchase. It unlocks all colour themes, a custom accent colour, and the extra start sounds (air horn, whistle, duck quack, cartoon boing, goat bleat, and two voice signals). Tapping any locked item opens the Starta Pro section. Purchase with a Sandbox account, and use **Restore Purchases** to restore it.
-> - **Got a code?** (bottom of Settings): entering **CHUCK** unlocks a free hidden colour theme ("GSTC") we share with our local team. It's cosmetic only, has no monetary value, and isn't part of Starta Pro.
-> - The app has no user accounts and no user-generated content, so it has no registration, login, account deletion, or reporting/blocking flows.
+> I built it because practice starts are usually called by a coach or a teammate, and after a few reps everyone falls into their rhythm. You end up training to anticipate the gun instead of reacting to it. If you're training alone, there's nobody to start you at all, and a real starter pistol isn't something most people own (or are allowed to bring to practice).
+>
+> It's made for sprinters, hurdlers, relay runners, and the coaches, parents, and volunteers who run their practices. You can set it to match real meet timing or speed it up for quick drills. There's also a head-start mode that fires a second, delayed signal for handicap or chase starts. It works fully offline, so it's fine at a track with bad signal.
 
-*[If you choose to ship everything free instead: remove the "Paid content" bullet.]*
+## 3. How to use the app (paste into "Notes")
 
----
+> No account, login, or sample files needed. Just open the app.
+>
+> Tap START and the app runs a start for you: "On your marks", "Set", then the gun. Tap Cancel if you want to stop partway through. Please make sure the ringer switch is on and the volume is up, or you won't hear anything.
+>
+> Everything else is behind the gear icon in the top right. From there you can change the volume, pick a different start sound (the Test button lets you hear it), adjust the timing or tap one of the presets, turn on Head start, and pick a color theme.
+>
+> Starta Pro is a one-time In-App Purchase. It unlocks all the color themes, a custom color picker, and the extra start sounds (air horn, whistle, duck quack, cartoon boing, goat bleat, and two voice signals). If you tap anything with a lock on it, Settings takes you to the Starta Pro section. You can buy it there with a Sandbox account, and Restore Purchases is right below.
+>
+> At the bottom of Settings there's a "Got a code?" box. Typing CHUCK unlocks a free bonus theme called GSTC that I made for our local team. It's just a color, it's free, and it's not part of Starta Pro.
+>
+> There are no user accounts and nothing users can post or share, so the app has no sign-up, login, account deletion, or reporting/blocking features.
 
-## 4. External services, tools, and platforms
+*[If you decide to make everything free instead, delete the Starta Pro paragraph.]*
 
-| Service | Used for | Notes |
-|---|---|---|
-| Apple StoreKit (via App Store) | Starta Pro In-App Purchase and restore | Only when payments are enabled |
-| RevenueCat (`@revenuecat/purchases-capacitor`) | Wraps StoreKit and checks the "pro" entitlement | Anonymous app user ID; only when payments are enabled |
-| Capacitor (`@capacitor/core`, `/ios`) | Native app shell around the web UI | On-device and open source; not a network service |
-| `@capacitor-community/native-audio` | Low-latency playback of the bundled start sounds | On-device |
-| iOS speech synthesis (`speechSynthesis`) | Speaks "On your marks", "Set", and the voice signals | On-device system voices |
+## 4. External services
 
-The app doesn't use any data providers, authentication services, analytics, advertising, or AI services. The start sounds are synthesised by the project's own script (`scripts/render-sounds.js`) and bundled with the app, so no stock or licensed audio is used. Settings are stored only on the device.
-
----
+> Starta mostly runs on the device itself. The only outside service is for the Starta Pro purchase: it goes through Apple's In-App Purchase system, and I use RevenueCat to handle the purchase and check whether someone has already bought Pro. RevenueCat only sees an anonymous ID, with no name or email.
+>
+> Everything else happens on the phone. The app is built with Capacitor, the sounds play through a native audio plugin, and the "On your marks" and "Set" calls use the iPhone's built-in text-to-speech voice. I made all of the start sounds myself with my own script, and they come bundled with the app.
+>
+> There's no analytics, no ads, no login service, and no AI. Settings are only saved on the device.
 
 ## 5. Regional differences
 
-> Starta works the same way in every region. It doesn't use location, region-specific content, or region-locked features. The interface is in English. The only regional difference is the Starta Pro price, which the App Store sets per storefront from the selected price tier.
-
----
+> Starta works the same everywhere. Nothing changes by country or region, and it doesn't use location. The app is in English. The only thing that varies is the price of Starta Pro, which the App Store sets for each country.
 
 ## 6. Regulated industry / third-party material
 
-> Not applicable. Starta isn't in a regulated industry (it isn't health, finance, gambling, or similar). It doesn't use third-party copyrighted or trademarked material. All sounds are generated by the developer's own code, and all artwork is original.
+> This doesn't apply to Starta. It isn't a health, finance, gambling, or other regulated app, and it doesn't use anyone else's copyrighted or trademarked material. I made all the sounds myself, and the artwork is my own.
 
-**Check before you paste this:** if "GSTC" (the hidden theme name) is a real club's, school's, or organisation's name or logo colours, you'll need their written permission to use it. If you can't get that, rename the theme to something generic so the answer above stays true.
+**Check before you paste this:** if "GSTC" is the name of a real club, school, or organization, get their okay first, or rename the theme to something generic. Otherwise the answer above isn't true.
