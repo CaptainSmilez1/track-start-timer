@@ -148,7 +148,6 @@
     horn:    { label: "Air horn", play: function(){ playFile("horn"); } },
     buzzer:  { label: "Buzzer", play: function(){ playFile("buzzer"); } },
     whistle: { label: "Whistle", play: function(){ playFile("whistle"); } },
-    voice:   { label: "Voice: “Go!”", play: function(){ speak("Go!", { pitch: 1.15, rate: 1 }); } },
     quack:   { label: "Duck quack", play: function(){ playFile("quack"); } },
     boing:   { label: "Cartoon boing", play: function(){ playFile("boing"); } },
     goat:    { label: "Goat bleat", play: function(){ playFile("goat"); } }
@@ -762,7 +761,7 @@
 
   /* ---------- init ---------- */
   loadSettings().then(function(){
-    if(!SOUNDS[S.sound]) S.sound = DEFAULTS.sound; /* a saved sound that's since been removed (e.g. Yeehaw) */
+    if(!SOUNDS[S.sound]) S.sound = DEFAULTS.sound; /* a saved sound that's since been removed (e.g. Yeehaw, Voice "Go!") */
     if(S.hazardRedeemed){
       addThemeSwatch("hazard"); /* before applyTheme, so its active state renders correctly */
       el("hazardCodeRow").hidden = true;
