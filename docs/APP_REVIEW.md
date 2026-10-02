@@ -52,25 +52,19 @@ You don't need account registration, login, account deletion, or UGC reporting/b
 >
 > Everything else is behind the gear icon in the top right. From there you can change the volume, pick a different start sound (the Test button lets you hear it), adjust the timing or tap one of the presets, turn on Head start, and pick a color theme.
 >
-> Starta Pro is a one-time In-App Purchase. It unlocks all the color themes, a custom color picker, and the extra start sounds (air horn, whistle, duck quack, cartoon boing, goat bleat, and two voice signals). If you tap anything with a lock on it, Settings takes you to the Starta Pro section. You can buy it there with a Sandbox account, and Restore Purchases is right below.
->
-> At the bottom of Settings there's a "Got a code?" box. Typing CHUCK unlocks a free bonus theme called GSTC that I made for our local team. It's just a color, it's free, and it's not part of Starta Pro.
+> At the bottom of Settings there's a "Got a code?" box. Typing CHUCK unlocks a free bonus theme called GSTC that I made for our local team. It's just a color, and it's free.
 >
 > There are no user accounts and nothing users can post or share, so the app has no sign-up, login, account deletion, or reporting/blocking features.
 
-*[If you decide to make everything free instead, delete the Starta Pro paragraph.]*
-
 ## 4. External services
 
-> Starta mostly runs on the device itself. The only outside service is for the Starta Pro purchase: it goes through Apple's In-App Purchase system, and I use RevenueCat to handle the purchase and check whether someone has already bought Pro. RevenueCat only sees an anonymous ID, with no name or email.
+> Starta doesn't use any outside services. Everything runs on the phone. The app is built with Capacitor, the sounds play through a native audio plugin, and the "On your marks" and "Set" calls use the iPhone's built-in text-to-speech voice. I made all of the start sounds myself with my own script, and they come bundled with the app.
 >
-> Everything else happens on the phone. The app is built with Capacitor, the sounds play through a native audio plugin, and the "On your marks" and "Set" calls use the iPhone's built-in text-to-speech voice. I made all of the start sounds myself with my own script, and they come bundled with the app.
->
-> There's no analytics, no ads, no login service, and no AI. Settings are only saved on the device.
+> There's no analytics, no ads, no login service, no payments, and no AI. Settings are only saved on the device, and the app works without an internet connection.
 
 ## 5. Regional differences
 
-> Starta works the same everywhere. Nothing changes by country or region, and it doesn't use location. The app is in English. The only thing that varies is the price of Starta Pro, which the App Store sets for each country.
+> Starta works the same everywhere. Nothing changes by country or region, and it doesn't use location. The app is in English and is free in every country.
 
 ## 6. Regulated industry / third-party material
 
