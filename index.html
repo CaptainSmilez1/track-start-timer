@@ -173,6 +173,15 @@
   </section>
 
   <button class="btn" id="resetBtn">Reset to defaults</button>
+  <button class="btn" id="removePromosBtn" hidden>Remove promo codes…</button>
+  <div id="removePromosConfirm" hidden>
+    <p class="hint" id="removePromosHint"></p>
+    <div class="row">
+      <input type="text" id="removePromosInput" class="code-input" placeholder="Type delete" autocapitalize="off" autocorrect="off" spellcheck="false" disabled>
+      <button class="btn" id="removePromosConfirmBtn" disabled>Remove</button>
+    </div>
+    <button class="btn" id="removePromosCancelBtn">Cancel</button>
+  </div>
   </div>
 </aside>
 

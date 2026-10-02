@@ -274,6 +274,7 @@
 
   function openPanel(){ body.classList.add("settings-open"); }
   function closePanel(){
+    cancelPromoRemoval();
     body.classList.remove("settings-open");
     blankLaunchElements(); /* blank immediately so the screen the panel reveals as it slides away is empty */
     setTimeout(replayLaunchAnimation, 320); /* then replay once the panel's finished sliding away */
@@ -515,6 +516,7 @@
     el("proUnlockBtn").hidden = !PAYMENTS_ENABLED || isPro;
     el("proRestoreBtn").hidden = !PAYMENTS_ENABLED || isPro;
     el("proCodeRow").hidden = PAYMENTS_ENABLED || isPro;
+    syncPromoRemoveBtn();
   }
 
   const proCodeInput = el("proCodeInput");
@@ -544,6 +546,7 @@
       hazardCodeInput.value = "";
       el("hazardStatus").hidden = false;
       el("hazardCodeRow").hidden = true;
+      syncPromoRemoveBtn();
     }else{
       codeError.hidden = false;
     }
@@ -597,7 +600,7 @@
     field:    { color: "#34d399", label: "Field" },
     sunset:   { color: "#fb923c", label: "Sunset" },
     daylight: { color: "#f4f6fb", label: "Daylight" },
-    hazard:   { color: "#f4c81a", label: "GSTC" }
+    hazard:   { color: "#f4c81a", label: "TRACKCLUB" }
   };
   const themesWrap = el("themes");
   function addThemeSwatch(name){
@@ -660,15 +663,64 @@
   }
 
   /* reset */
+  /* reset only touches settings — redeemed promo codes are kept; removing
+     those is its own deliberate action below */
   el("resetBtn").addEventListener("click", function(){
-    S = Object.assign({}, DEFAULTS);
-    isPro = false; /* re-lock a code-redeemed unlock too — "reset" means reset */
-    const hazardSwatch = themesWrap.querySelector('[data-theme="hazard"]');
-    if(hazardSwatch) hazardSwatch.remove(); /* hide it again, matching "hidden until redeemed" */
-    el("hazardCodeRow").hidden = false;
-    el("hazardStatus").hidden = true;
+    S = Object.assign({}, DEFAULTS, { proRedeemed: S.proRedeemed, hazardRedeemed: S.hazardRedeemed });
     syncInputs(); applyTheme(); updateConfigLine(); renderProGates(); saveSettings();
   });
+
+  /* remove promos — deliberately slow: a 3 second wait, then typing "delete" */
+  const PROMO_WAIT_SECONDS = 3;
+  let promoTimer = null;
+  function hasPromos(){ return !!(S.proRedeemed || S.hazardRedeemed); }
+  function syncPromoRemoveBtn(){
+    el("removePromosBtn").hidden = !el("removePromosConfirm").hidden || !hasPromos();
+  }
+  function cancelPromoRemoval(){
+    clearInterval(promoTimer); promoTimer = null;
+    el("removePromosConfirm").hidden = true;
+    el("removePromosInput").value = "";
+    el("removePromosInput").disabled = true;
+    el("removePromosConfirmBtn").disabled = true;
+    syncPromoRemoveBtn();
+  }
+  function startPromoRemoval(){
+    const input = el("removePromosInput"), hint = el("removePromosHint");
+    const base = "This removes any redeemed promo codes — Starta Pro and the hidden theme lock again until you re-enter the codes. ";
+    let left = PROMO_WAIT_SECONDS;
+    input.value = ""; input.disabled = true;
+    el("removePromosConfirmBtn").disabled = true;
+    el("removePromosConfirm").hidden = false;
+    syncPromoRemoveBtn();
+    hint.textContent = base + "Please wait " + left + "…";
+    promoTimer = setInterval(function(){
+      left--;
+      if(left > 0){ hint.textContent = base + "Please wait " + left + "…"; return; }
+      clearInterval(promoTimer); promoTimer = null;
+      hint.textContent = base + 'Type "delete" to confirm.';
+      input.disabled = false; input.focus();
+    }, 1000);
+  }
+  function removePromos(){
+    S.proRedeemed = false; S.hazardRedeemed = false;
+    isPro = false;
+    const hazardSwatch = themesWrap.querySelector('[data-theme="hazard"]');
+    if(hazardSwatch) hazardSwatch.remove();
+    el("hazardCodeRow").hidden = false;
+    el("hazardStatus").hidden = true;
+    /* don't leave a now-locked theme or sound selected */
+    if(S.theme === "hazard" || isThemeLocked(S.theme)) S.theme = DEFAULTS.theme;
+    if(isSoundLocked(S.sound)) S.sound = DEFAULTS.sound;
+    cancelPromoRemoval();
+    syncInputs(); applyTheme(); updateConfigLine(); renderProGates(); saveSettings();
+  }
+  el("removePromosBtn").addEventListener("click", startPromoRemoval);
+  el("removePromosCancelBtn").addEventListener("click", cancelPromoRemoval);
+  el("removePromosInput").addEventListener("input", function(){
+    el("removePromosConfirmBtn").disabled = el("removePromosInput").value.trim().toLowerCase() !== "delete";
+  });
+  el("removePromosConfirmBtn").addEventListener("click", removePromos);
 
   /* config summary on the main screen — compact icon chips instead of a sentence */
   /* each icon's artwork is nudged via an inner <g transform> so its inked
