@@ -70,7 +70,7 @@
   function applyNativeVolumes(){
     if(!NativeAudio) return;
     Object.keys(SOUND_FILES).forEach(function(key){
-      NativeAudio.setVolume({ assetId: key, volume: Math.max(0.1, Math.min(1, vol())) }).catch(function(){});
+      NativeAudio.setVolume({ assetId: key, volume: Math.max(0, Math.min(1, vol())) }).catch(function(){});
     });
   }
 
@@ -192,7 +192,7 @@
   function startSequence(){
     if(running) return;
     unlockAudio(); /* unlock sound on this user tap */
-    if(NativeAudio){
+    if(NativeAudio && S.volume > 0){
       /* wake the speaker amp now, several seconds before the real starter
          sound fires — on real devices the first sound played after an idle
          gap can come out muffled/quiet because the hardware ramps up mid-
