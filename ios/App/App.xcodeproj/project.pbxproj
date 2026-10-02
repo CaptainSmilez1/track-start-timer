@@ -16,6 +16,14 @@
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
+		6470CD6D786601300C64749C /* bang.wav in Resources */ = {isa = PBXBuildFile; fileRef = 129D0169B1ED0ACD3B864B1F /* bang.wav */; };
+		7641431A7AA2DA06C790B0BF /* boing.wav in Resources */ = {isa = PBXBuildFile; fileRef = DAE8A1723AA2A1B609F22D1F /* boing.wav */; };
+		0226A93315896A3385AD005B /* buzzer.wav in Resources */ = {isa = PBXBuildFile; fileRef = A755C07B22A3AB314E9FC11E /* buzzer.wav */; };
+		0CCA325F1D9D25A632C0DD85 /* goat.wav in Resources */ = {isa = PBXBuildFile; fileRef = A0189DEED9834708C1F49D00 /* goat.wav */; };
+		999CF6698FDC650992B6ED46 /* horn.wav in Resources */ = {isa = PBXBuildFile; fileRef = 56F68D3B80002C864D60F16C /* horn.wav */; };
+		6AE9E8F857391DB419120CD3 /* primer.wav in Resources */ = {isa = PBXBuildFile; fileRef = D4D305C6791228F65128C740 /* primer.wav */; };
+		8E9821D5F890CDE8B2C2C805 /* quack.wav in Resources */ = {isa = PBXBuildFile; fileRef = 5A97F090E588775EC2F9E9FF /* quack.wav */; };
+		2B74D2E3C6BA7A67ADE79A15 /* whistle.wav in Resources */ = {isa = PBXBuildFile; fileRef = 83A882F0A59E8BD9A5969A1F /* whistle.wav */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +37,14 @@
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
+		129D0169B1ED0ACD3B864B1F /* bang.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = bang.wav; sourceTree = "<group>"; };
+		DAE8A1723AA2A1B609F22D1F /* boing.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = boing.wav; sourceTree = "<group>"; };
+		A755C07B22A3AB314E9FC11E /* buzzer.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = buzzer.wav; sourceTree = "<group>"; };
+		A0189DEED9834708C1F49D00 /* goat.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = goat.wav; sourceTree = "<group>"; };
+		56F68D3B80002C864D60F16C /* horn.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = horn.wav; sourceTree = "<group>"; };
+		D4D305C6791228F65128C740 /* primer.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = primer.wav; sourceTree = "<group>"; };
+		5A97F090E588775EC2F9E9FF /* quack.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = quack.wav; sourceTree = "<group>"; };
+		83A882F0A59E8BD9A5969A1F /* whistle.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = whistle.wav; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -44,6 +60,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		A16B394878B13031588A8E1E /* sounds */ = {
+			isa = PBXGroup;
+			children = (
+				129D0169B1ED0ACD3B864B1F /* bang.wav */,
+				DAE8A1723AA2A1B609F22D1F /* boing.wav */,
+				A755C07B22A3AB314E9FC11E /* buzzer.wav */,
+				A0189DEED9834708C1F49D00 /* goat.wav */,
+				56F68D3B80002C864D60F16C /* horn.wav */,
+				D4D305C6791228F65128C740 /* primer.wav */,
+				5A97F090E588775EC2F9E9FF /* quack.wav */,
+				83A882F0A59E8BD9A5969A1F /* whistle.wav */,
+			);
+			path = sounds;
+			sourceTree = "<group>";
+		};
 		504EC2FB1FED79650016851F = {
 			isa = PBXGroup;
 			children = (
@@ -73,6 +104,7 @@
 				504EC3131FED79650016851F /* Info.plist */,
 				2FAD9762203C412B000D30F8 /* config.xml */,
 				50B271D01FEDC1A000F3C39B /* public */,
+				A16B394878B13031588A8E1E /* sounds */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -144,6 +176,14 @@
 			files = (
 				504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */,
 				50B271D11FEDC1A000F3C39B /* public in Resources */,
+				6470CD6D786601300C64749C /* bang.wav in Resources */,
+				7641431A7AA2DA06C790B0BF /* boing.wav in Resources */,
+				0226A93315896A3385AD005B /* buzzer.wav in Resources */,
+				0CCA325F1D9D25A632C0DD85 /* goat.wav in Resources */,
+				999CF6698FDC650992B6ED46 /* horn.wav in Resources */,
+				6AE9E8F857391DB419120CD3 /* primer.wav in Resources */,
+				8E9821D5F890CDE8B2C2C805 /* quack.wav in Resources */,
+				2B74D2E3C6BA7A67ADE79A15 /* whistle.wav in Resources */,
 				504EC30F1FED79650016851F /* Assets.xcassets in Resources */,
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,

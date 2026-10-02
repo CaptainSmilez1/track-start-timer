@@ -21,6 +21,9 @@ function biquadCoeffs(type, freq, Q){
   if(type === "lowpass"){
     b0 = (1 - cosw0) / 2; b1 = 1 - cosw0; b2 = (1 - cosw0) / 2;
     a0 = 1 + alpha; a1 = -2 * cosw0; a2 = 1 - alpha;
+  } else if(type === "highpass"){
+    b0 = (1 + cosw0) / 2; b1 = -(1 + cosw0); b2 = (1 + cosw0) / 2;
+    a0 = 1 + alpha; a1 = -2 * cosw0; a2 = 1 - alpha;
   } else { // bandpass, constant 0dB peak gain
     b0 = alpha; b1 = 0; b2 = -alpha;
     a0 = 1 + alpha; a1 = -2 * cosw0; a2 = 1 - alpha;
@@ -86,6 +89,17 @@ function attackDecayEnv(n, attackSec){
   for(let i = 0; i < n; i++){
     if(i < a) out[i] = i / a;
     else out[i] = Math.pow(1 - (i - a) / (n - a || 1), 1.6);
+  }
+  return out;
+}
+/* like attackDecayEnv but holds its level longer (pow < 1) — more energy
+   in the opening moment without taller peaks, so it sounds louder */
+function heldEnv(n, attackSec, pow){
+  const out = zeros(n);
+  const a = secToSamples(attackSec);
+  for(let i = 0; i < n; i++){
+    if(i < a) out[i] = i / a;
+    else out[i] = Math.pow(1 - (i - a) / (n - a || 1), pow);
   }
   return out;
 }
@@ -176,60 +190,91 @@ function finish(samples){
   return out;
 }
 
-/* ================= sound designs ================= */
-
-function renderBang(){
-  const dur = 0.55;
-  const buf = zeros(secToSamples(dur));
-
-  // main noise crack, fast lowpass sweep from bright to dull
-  const crack = whiteNoise(0.42);
-  filterInPlace(crack, t => 9500 * Math.pow(250 / 9500, t / 0.42), "lowpass", 0.9);
-  multiply(crack, decayEnv(crack.length, 2.1));
-  mixInto(buf, crack, 1.0, 0);
-
-  // very short high transient for the "snap"
-  const snap = whiteNoise(0.05);
-  filterInPlace(snap, t => 11000 * Math.pow(3500 / 11000, t / 0.05), "lowpass", 0.9);
-  multiply(snap, decayEnv(snap.length, 5));
-  mixInto(buf, snap, 0.7, 0);
-
-  // low thump
-  const thump = osc("sine", t => 150 * Math.pow(38 / 150, t / 0.3), 0.32, 0);
-  multiply(thump, attackDecayEnv(thump.length, 0.003));
-  mixInto(buf, thump, 0.85, 0);
-
-  const sub = osc("sine", () => 85, 0.2, 0);
-  multiply(sub, decayEnv(sub.length, 2.4));
-  mixInto(buf, sub, 0.45, 0.005);
-
-  return finish(buf);
+/* Master for the start sounds matched to the gun's loudness: strip what a
+   phone speaker can't play so the loudness budget goes to frequencies you
+   actually hear, then saturate only gently. Pushing harder (RMS 0.95 /
+   drive 2.5 was tried on the gun) squares the waveform off and sounds
+   audibly distorted on a phone.
+   Each sound passes its own RMS: chosen so it lands at the gun's loudness
+   (about -7.4dB A-weighted over its first 300ms) while keeping clipped
+   samples within the range the original sounds already had (<=1500).
+   Re-measure if a design changes — these numbers are specific to it. */
+const LOUD_TARGET_RMS = 0.6;
+function finishLoud(samples, rms = LOUD_TARGET_RMS){
+  filterInPlace(samples, () => 250, "highpass", 0.7);
+  fadeEdges(samples, 1, 12);
+  normalizeRMS(samples, rms);
+  softClip(samples, 1.3);
+  const lead = zeros(secToSamples(LEAD_IN_SEC));
+  const out = new Float64Array(lead.length + samples.length);
+  out.set(lead, 0);
+  out.set(samples, lead.length);
+  return out;
 }
 
+/* ================= sound designs ================= */
+
+/* Built for a phone speaker, not headphones: phone speakers can't reproduce
+   much below ~300Hz, so a deep "thump" spends the file's loudness budget on
+   sound nobody hears. All the energy here sits in the 400Hz–8kHz range a
+   phone speaker plays loudest (and the ear is most sensitive to), with a
+   longer crack so it reads like a real starter
+   pistol from across a track instead of a polite click. */
+function renderBang(){
+  const dur = 0.9;
+  const buf = zeros(secToSamples(dur));
+
+  // main crack: bright broadband noise, slower decay = more energy = louder
+  const crack = whiteNoise(0.65);
+  filterInPlace(crack, t => 12000 * Math.pow(1800 / 12000, t / 0.65), "lowpass", 0.8);
+  filterInPlace(crack, () => 400, "highpass", 0.7);
+  multiply(crack, decayEnv(crack.length, 1.4));
+  mixInto(buf, crack, 1.0, 0);
+
+  // instant high "snap" on the very first milliseconds
+  const snap = whiteNoise(0.04);
+  filterInPlace(snap, () => 2500, "highpass", 0.7);
+  multiply(snap, decayEnv(snap.length, 4));
+  mixInto(buf, snap, 0.9, 0);
+
+  // punchy body in the mids instead of an inaudible sub-bass thump
+  const body = whiteNoise(0.35);
+  filterInPlace(body, () => 700, "bandpass", 0.8);
+  multiply(body, decayEnv(body.length, 2));
+  mixInto(buf, body, 1.4, 0);
+
+  // short outdoor-style echo tail
+  const echo = whiteNoise(0.5);
+  filterInPlace(echo, () => 2600, "lowpass", 0.7);
+  filterInPlace(echo, () => 350, "highpass", 0.7);
+  multiply(echo, decayEnv(echo.length, 2.2));
+  mixInto(buf, echo, 0.35, 0.12);
+
+  return finishLoud(buf);
+}
+
+/* brighter (3kHz lowpass instead of 1.5kHz) and held longer than before; the
+   200Hz sub-square is gone since a phone speaker can't play it anyway */
 function renderHorn(){
   const dur = 0.7;
   const buf = zeros(secToSamples(dur));
   const vib = t => 1 + 0.004 * Math.sin(2 * Math.PI * 5.5 * t);
 
   const a = osc("sawtooth", t => 400 * vib(t), dur, 0);
-  multiply(a, attackDecayEnv(a.length, 0.015));
-  filterInPlace(a, () => 1500, "lowpass", 0.85);
+  multiply(a, heldEnv(a.length, 0.015, 0.8));
+  filterInPlace(a, () => 3000, "lowpass", 0.85);
   mixInto(buf, a, 0.55, 0);
 
   const b = osc("sawtooth", t => 402.5 * vib(t + 0.3), dur, 0.13);
-  multiply(b, attackDecayEnv(b.length, 0.015));
-  filterInPlace(b, () => 1500, "lowpass", 0.85);
+  multiply(b, heldEnv(b.length, 0.015, 0.8));
+  filterInPlace(b, () => 3000, "lowpass", 0.85);
   mixInto(buf, b, 0.42, 0);
 
-  const sub = osc("square", t => 200 * vib(t), dur, 0);
-  multiply(sub, attackDecayEnv(sub.length, 0.02));
-  mixInto(buf, sub, 0.22, 0);
-
   const shimmer = osc("sine", () => 800, dur, 0);
-  multiply(shimmer, attackDecayEnv(shimmer.length, 0.02));
+  multiply(shimmer, heldEnv(shimmer.length, 0.015, 0.8));
   mixInto(buf, shimmer, 0.12, 0);
 
-  return finish(buf);
+  return finishLoud(buf, 0.95);
 }
 
 function renderQuack(){
@@ -239,21 +284,27 @@ function renderQuack(){
     const d = 0.15;
     const s = osc("sawtooth", t => 320 * Math.pow(190 / 320, t / d), d, 0);
     multiply(s, attackDecayEnv(s.length, 0.008));
-    filterInPlace(s, () => 1100, "bandpass", 4.5);
+    filterInPlace(s, () => 1250, "bandpass", 3);
     mixInto(buf, s, 0.9, startSec);
   }
   blip(0);
   blip(0.19);
-  return finish(buf);
+  return finishLoud(buf, 1.37);
 }
 
+/* sweeps down to 180Hz instead of an inaudible 65Hz, with a little 2nd/3rd
+   harmonic so a phone speaker has something to play through the whole sweep */
 function renderBoing(){
   const dur = 0.85;
   const buf = zeros(secToSamples(dur));
-  const s = osc("sine", t => 620 * Math.pow(65 / 620, t / dur) * (1 + 0.05 * Math.sin(2 * Math.PI * 13 * t)), dur, 0);
+  const f = t => 620 * Math.pow(180 / 620, t / dur) * (1 + 0.05 * Math.sin(2 * Math.PI * 13 * t));
+  const s = osc("sine", f, dur, 0);
+  const s2 = osc("sine", t => 2 * f(t), dur, 0);
+  const s3 = osc("sine", t => 3 * f(t), dur, 0);
+  for(let i = 0; i < s.length; i++) s[i] = s[i] + 0.35 * s2[i] + 0.18 * s3[i];
   multiply(s, attackDecayEnv(s.length, 0.01));
   mixInto(buf, s, 0.95, 0);
-  return finish(buf);
+  return finishLoud(buf, 0.73);
 }
 
 function renderGoat(){
@@ -266,18 +317,21 @@ function renderGoat(){
   return finish(buf);
 }
 
+/* pitched at 480Hz (was 320Hz): at 320Hz a phone speaker and the ear are both
+   so insensitive that it couldn't reach the gun's loudness even fully
+   saturated. Held envelope and a 5kHz lowpass let the buzz's harmonics through */
 function renderBuzzer(){
   const dur = 0.5;
   const buf = zeros(secToSamples(dur));
-  const s = osc("square", () => 320, dur, 0);
-  multiply(s, attackDecayEnv(s.length, 0.01));
-  filterInPlace(s, () => 1800, "lowpass", 0.7);
+  const s = osc("square", () => 480, dur, 0);
+  multiply(s, heldEnv(s.length, 0.008, 0.5));
+  filterInPlace(s, () => 5000, "lowpass", 0.7);
   mixInto(buf, s, 0.9, 0);
-  const s2 = osc("square", () => 322, dur, 0.05);
-  multiply(s2, attackDecayEnv(s2.length, 0.01));
-  filterInPlace(s2, () => 1800, "lowpass", 0.7);
+  const s2 = osc("square", () => 483, dur, 0.05);
+  multiply(s2, heldEnv(s2.length, 0.008, 0.5));
+  filterInPlace(s2, () => 5000, "lowpass", 0.7);
   mixInto(buf, s2, 0.6, 0);
-  return finish(buf);
+  return finishLoud(buf, 1.06);
 }
 
 function renderWhistle(){
