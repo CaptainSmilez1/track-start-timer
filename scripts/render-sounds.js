@@ -21,6 +21,9 @@ function biquadCoeffs(type, freq, Q){
   if(type === "lowpass"){
     b0 = (1 - cosw0) / 2; b1 = 1 - cosw0; b2 = (1 - cosw0) / 2;
     a0 = 1 + alpha; a1 = -2 * cosw0; a2 = 1 - alpha;
+  } else if(type === "highpass"){
+    b0 = (1 + cosw0) / 2; b1 = -(1 + cosw0); b2 = (1 + cosw0) / 2;
+    a0 = 1 + alpha; a1 = -2 * cosw0; a2 = 1 - alpha;
   } else { // bandpass, constant 0dB peak gain
     b0 = alpha; b1 = 0; b2 = -alpha;
     a0 = 1 + alpha; a1 = -2 * cosw0; a2 = 1 - alpha;
@@ -176,34 +179,62 @@ function finish(samples){
   return out;
 }
 
+/* the starter gun's own, much hotter master: strip anything a phone speaker
+   can't play, push RMS far higher, and drive the tanh limiter hard — heavy
+   saturation is fine (a real gunshot is noise), and tanh still caps every
+   sample below full scale so it never hard-clips */
+const LOUD_TARGET_RMS = 0.95;
+function finishLoud(samples){
+  filterInPlace(samples, () => 300, "highpass", 0.7);
+  fadeEdges(samples, 1, 12);
+  normalizeRMS(samples, LOUD_TARGET_RMS);
+  softClip(samples, 2.5);
+  const lead = zeros(secToSamples(LEAD_IN_SEC));
+  const out = new Float64Array(lead.length + samples.length);
+  out.set(lead, 0);
+  out.set(samples, lead.length);
+  return out;
+}
+
 /* ================= sound designs ================= */
 
+/* Built for a phone speaker, not headphones: phone speakers can't reproduce
+   much below ~300Hz, so a deep "thump" spends the file's loudness budget on
+   sound nobody hears. All the energy here sits in the 400Hz–8kHz range a
+   phone speaker plays loudest (and the ear is most sensitive to), with a
+   longer crack and a hard-driven limiter so it reads like a real starter
+   pistol from across a track instead of a polite click. */
 function renderBang(){
-  const dur = 0.55;
+  const dur = 0.9;
   const buf = zeros(secToSamples(dur));
 
-  // main noise crack, fast lowpass sweep from bright to dull
-  const crack = whiteNoise(0.42);
-  filterInPlace(crack, t => 9500 * Math.pow(250 / 9500, t / 0.42), "lowpass", 0.9);
-  multiply(crack, decayEnv(crack.length, 2.1));
+  // main crack: bright broadband noise, slower decay = more energy = louder
+  const crack = whiteNoise(0.65);
+  filterInPlace(crack, t => 12000 * Math.pow(1800 / 12000, t / 0.65), "lowpass", 0.8);
+  filterInPlace(crack, () => 400, "highpass", 0.7);
+  multiply(crack, decayEnv(crack.length, 1.4));
   mixInto(buf, crack, 1.0, 0);
 
-  // very short high transient for the "snap"
-  const snap = whiteNoise(0.05);
-  filterInPlace(snap, t => 11000 * Math.pow(3500 / 11000, t / 0.05), "lowpass", 0.9);
-  multiply(snap, decayEnv(snap.length, 5));
-  mixInto(buf, snap, 0.7, 0);
+  // instant high "snap" on the very first milliseconds
+  const snap = whiteNoise(0.04);
+  filterInPlace(snap, () => 2500, "highpass", 0.7);
+  multiply(snap, decayEnv(snap.length, 4));
+  mixInto(buf, snap, 0.9, 0);
 
-  // low thump
-  const thump = osc("sine", t => 150 * Math.pow(38 / 150, t / 0.3), 0.32, 0);
-  multiply(thump, attackDecayEnv(thump.length, 0.003));
-  mixInto(buf, thump, 0.85, 0);
+  // punchy body in the mids instead of an inaudible sub-bass thump
+  const body = whiteNoise(0.35);
+  filterInPlace(body, () => 700, "bandpass", 0.8);
+  multiply(body, decayEnv(body.length, 2));
+  mixInto(buf, body, 1.4, 0);
 
-  const sub = osc("sine", () => 85, 0.2, 0);
-  multiply(sub, decayEnv(sub.length, 2.4));
-  mixInto(buf, sub, 0.45, 0.005);
+  // short outdoor-style echo tail
+  const echo = whiteNoise(0.5);
+  filterInPlace(echo, () => 2600, "lowpass", 0.7);
+  filterInPlace(echo, () => 350, "highpass", 0.7);
+  multiply(echo, decayEnv(echo.length, 2.2));
+  mixInto(buf, echo, 0.35, 0.12);
 
-  return finish(buf);
+  return finishLoud(buf);
 }
 
 function renderHorn(){
