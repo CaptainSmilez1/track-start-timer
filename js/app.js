@@ -151,8 +151,7 @@
     voice:   { label: "Voice: “Go!”", play: function(){ speak("Go!", { pitch: 1.15, rate: 1 }); } },
     quack:   { label: "Duck quack", play: function(){ playFile("quack"); } },
     boing:   { label: "Cartoon boing", play: function(){ playFile("boing"); } },
-    goat:    { label: "Goat bleat", play: function(){ playFile("goat"); } },
-    yeehaw:  { label: "Voice: “Yeehaw!”", play: function(){ speak("Yeehaw!", { pitch: 1.9, rate: 1.15 }); } }
+    goat:    { label: "Goat bleat", play: function(){ playFile("goat"); } }
   };
 
   /* ---------- sequence ---------- */
@@ -763,6 +762,7 @@
 
   /* ---------- init ---------- */
   loadSettings().then(function(){
+    if(!SOUNDS[S.sound]) S.sound = DEFAULTS.sound; /* a saved sound that's since been removed (e.g. Yeehaw) */
     if(S.hazardRedeemed){
       addThemeSwatch("hazard"); /* before applyTheme, so its active state renders correctly */
       el("hazardCodeRow").hidden = true;
