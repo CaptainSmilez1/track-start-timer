@@ -179,16 +179,18 @@ function finish(samples){
   return out;
 }
 
-/* the starter gun's own, much hotter master: strip anything a phone speaker
-   can't play, push RMS far higher, and drive the tanh limiter hard — heavy
-   saturation is fine (a real gunshot is noise), and tanh still caps every
-   sample below full scale so it never hard-clips */
-const LOUD_TARGET_RMS = 0.95;
+/* the starter gun's own master: strip what a phone speaker can't play so
+   the loudness budget goes to frequencies you actually hear, then saturate
+   only gently. Pushing harder (RMS 0.95 / drive 2.5 was tried) squares the
+   waveform off and sounds audibly distorted on a phone; these settings came
+   out ~7dB louder (A-weighted) than the original gun with less clipping
+   than the original had. */
+const LOUD_TARGET_RMS = 0.6;
 function finishLoud(samples){
-  filterInPlace(samples, () => 300, "highpass", 0.7);
+  filterInPlace(samples, () => 250, "highpass", 0.7);
   fadeEdges(samples, 1, 12);
   normalizeRMS(samples, LOUD_TARGET_RMS);
-  softClip(samples, 2.5);
+  softClip(samples, 1.3);
   const lead = zeros(secToSamples(LEAD_IN_SEC));
   const out = new Float64Array(lead.length + samples.length);
   out.set(lead, 0);
@@ -202,7 +204,7 @@ function finishLoud(samples){
    much below ~300Hz, so a deep "thump" spends the file's loudness budget on
    sound nobody hears. All the energy here sits in the 400Hz–8kHz range a
    phone speaker plays loudest (and the ear is most sensitive to), with a
-   longer crack and a hard-driven limiter so it reads like a real starter
+   longer crack so it reads like a real starter
    pistol from across a track instead of a polite click. */
 function renderBang(){
   const dur = 0.9;
