@@ -21,8 +21,7 @@ The answers below assume you take option 1 above, the real In-App Purchase. Note
 
 **Before you record**
 - Use your iPhone (a real phone, not the simulator) updated to the latest iOS.
-- Install the build you're submitting, from TestFlight or Xcode. Make sure it's the version with the Pro locks removed, so everything is unlocked.
-- If you've used the app before, delete it and reinstall so it starts fresh.
+- Install the build you're submitting, from TestFlight or Xcode. - If you've used the app before, delete it and reinstall so it starts fresh.
 - Turn the ringer switch on and turn the volume up so the sounds are in the video.
 - Turn on Do Not Disturb so no notifications pop up.
 - Add Screen Recording to Control Center if it isn't there already: Settings > Control Center > Screen Recording.
@@ -37,8 +36,9 @@ The answers below assume you take option 1 above, the real In-App Purchase. Note
 6. **Timing.** Tap a preset like Quick or Official, then tap + or – on one of the Min/Max numbers.
 7. **Head start.** Turn on Head start. Close Settings with the X and tap START to show the two signals.
 8. **Themes.** Open Settings again. Tap a couple of color themes and try the custom color picker.
-9. **Bonus theme.** Scroll to "Got a code?", type CHUCK, tap Redeem, and pick the GSTC theme.
-10. **Finish.** Tap Reset to defaults, close Settings, and stop the recording.
+9. **Starta Pro code.** Tap a locked theme so Settings jumps to Starta Pro. Type STARTAPRO, tap Redeem, and show the locks disappearing. Pick an unlocked sound and tap Test.
+10. **Bonus theme.** Scroll to "Got a code?", type CHUCK, tap Redeem, and pick the GSTC theme.
+11. **Finish.** Tap Reset to defaults, close Settings, and stop the recording.
 
 **After recording**
 - The video saves to your Photos app. Trim the start and end if you want, but don't cut anything out of the middle.
@@ -65,7 +65,9 @@ The app has no accounts, no posts or chat between users, and no purchases. So th
 >
 > Everything else is behind the gear icon in the top right. From there you can change the volume, pick a different start sound (the Test button lets you hear it), adjust the timing or tap one of the presets, turn on Head start, and pick a color theme.
 >
-> At the bottom of Settings there's a "Got a code?" box. Typing CHUCK unlocks a free bonus theme called GSTC that I made for our local team. It's just a color, and it's free.
+> Some themes and sounds have a lock on them. That's Starta Pro, and it isn't paid. There's no purchase anywhere in the app, and the code is never sold. Pro is just unlocked with a free code: in Settings, go to the Starta Pro section, type STARTAPRO, and tap Redeem. That unlocks all the color themes, the custom color picker, and the extra start sounds (air horn, whistle, duck quack, cartoon boing, goat bleat, and two voice signals).
+>
+> At the bottom of Settings there's a separate "Got a code?" box. Typing CHUCK unlocks a free bonus theme called GSTC that I made for our local team. It's just a color, and it's free.
 >
 > There are no user accounts and nothing users can post or share, so the app has no sign-up, login, account deletion, or reporting/blocking features.
 
