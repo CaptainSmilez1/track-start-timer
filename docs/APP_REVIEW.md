@@ -17,22 +17,35 @@ The answers below assume you take option 1 above, the real In-App Purchase. Note
 
 ---
 
-## 1. Screen recording (shot list)
+## 1. Screen recording guide
 
-Record on a physical iPhone running the latest iOS with **Settings → Control Center → Screen Recording**. Turn the ringer switch on and volume up so the start signals can be heard. Then record in this order, in one take:
+**Before you record**
+- Use your iPhone (a real phone, not the simulator) updated to the latest iOS.
+- Install the build you're submitting, from TestFlight or Xcode. Make sure it's the version with the Pro locks removed, so everything is unlocked.
+- If you've used the app before, delete it and reinstall so it starts fresh.
+- Turn the ringer switch on and turn the volume up so the sounds are in the video.
+- Turn on Do Not Disturb so no notifications pop up.
+- Add Screen Recording to Control Center if it isn't there already: Settings > Control Center > Screen Recording.
+- To record sound, long-press the record button in Control Center and check that the microphone is on. iOS records the app's own audio either way, but turning the mic on is a backup.
 
-1. **Launch:** start on the Home Screen and tap the Starta icon. The launch animation plays and the START screen appears.
-2. **Typical flow:** tap **START**. The screen shows and speaks "On your marks" and then "Set", then plays the starter-gun sound with a "GO!" flash. Run it a second time and tap **Cancel** midway to show cancelling.
-3. **Settings:** tap the gear icon.
-   - Change volume, pick a start signal and tap **Test**.
-   - Tap a timing preset (e.g. *Quick*, *Official*) and adjust a Min/Max stepper.
-   - Turn on **Head start**, close Settings, and run START once to show both signals.
-   - Tap the free *Track* theme. Then tap a locked theme or a "(Pro)" sound to show the paywall scrolling to **Starta Pro**.
-4. **Paid content:** in **Starta Pro**, tap **Unlock Starta Pro** and complete the purchase with a Sandbox account. Show the locks disappearing. Pick a Pro theme, the custom color, and a Pro sound (e.g. Air horn) and **Test** it. Then show **Restore Purchases**. If you test on a fresh install, it's the cleanest place to show it.
-5. **Hidden theme:** in **Got a code?**, enter `CHUCK`, tap Redeem, and select the GSTC theme.
-6. Optionally, tap **Reset to defaults**.
+**What to record (one take, about 1–2 minutes)**
+1. **Start on the Home Screen.** Start recording from Control Center, go back to the Home Screen, and tap the Starta icon. The recording has to begin with launching the app.
+2. **Run a start.** Tap START. Let it say "On your marks", then "Set", then fire with the "GO!" flash.
+3. **Show Cancel.** Tap START again and tap Cancel before it fires.
+4. **Open Settings.** Tap the gear icon in the top right.
+5. **Sound.** Tap + or – on the volume. Pick a different start sound (Air horn, for example) and tap Test.
+6. **Timing.** Tap a preset like Quick or Official, then tap + or – on one of the Min/Max numbers.
+7. **Head start.** Turn on Head start. Close Settings with the X and tap START to show the two signals.
+8. **Themes.** Open Settings again. Tap a couple of color themes and try the custom color picker.
+9. **Bonus theme.** Scroll to "Got a code?", type CHUCK, tap Redeem, and pick the GSTC theme.
+10. **Finish.** Tap Reset to defaults, close Settings, and stop the recording.
 
-You don't need account registration, login, account deletion, or UGC reporting/blocking, because the app has no accounts and no user-generated content. Mention this in the notes (see below).
+**After recording**
+- The video saves to your Photos app. Trim the start and end if you want, but don't cut anything out of the middle.
+- Watch it once to check that the sounds came through.
+- Upload it in App Store Connect under App Review Information (or share a link to it in the Notes).
+
+The app has no accounts, no posts or chat between users, and no purchases. So there's no sign-up, login, account deletion, reporting or paid content to show.
 
 ---
 
