@@ -77,9 +77,11 @@
   const audioEls = {};
   if(NativeAudio){
     Object.keys(SOUND_FILES).forEach(function(key){
-      /* the plugin already assumes ios/App/App/sounds (Android: assets) as
-         the base folder per its own docs — assetPath is just the bare
-         filename, not prefixed with "sounds/" again */
+      /* on iOS the plugin looks the file up at the TOP LEVEL of the app
+         bundle (Bundle.main.path(forResource:ofType:)), so assetPath is the
+         bare filename — and the .wav files must be in the Xcode project as
+         a regular group, not a blue folder reference (that would copy them
+         into a subfolder the plugin never searches) */
       NativeAudio.preload({
         assetId: key, assetPath: key + ".wav",
         audioChannelNum: 1, isUrl: false
