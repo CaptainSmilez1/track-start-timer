@@ -10,7 +10,8 @@ Answers for the App Store Connect **App Review Information** questions.
 
 **Before you record**
 - Use your iPhone (a real phone, not the simulator) updated to the latest iOS.
-- Install the build you're submitting, from TestFlight or Xcode. - If you've used the app before, delete it and reinstall so it starts fresh.
+- Install the build you're submitting, from TestFlight or Xcode.
+- If you've used the app before, delete it and reinstall so it starts fresh.
 - Turn the ringer switch on and turn the volume up so the sounds are in the video.
 - Turn on Do Not Disturb so no notifications pop up.
 - Add Screen Recording to Control Center if it isn't there already: Settings > Control Center > Screen Recording.
