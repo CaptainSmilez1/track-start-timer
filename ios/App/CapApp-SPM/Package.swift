@@ -12,8 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.4.2"),
-        .package(name: "CapacitorCommunityNativeAudio", path: "..\..\..\node_modules\@capacitor-community\native-audio"),
-        .package(name: "RevenuecatPurchasesCapacitor", path: "..\..\..\node_modules\@revenuecat\purchases-capacitor")
+        .package(name: "CapacitorCommunityNativeAudio", path: "../../../node_modules/@capacitor-community/native-audio")
     ],
     targets: [
         .target(
@@ -21,8 +20,7 @@ let package = Package(
             dependencies: [
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
                 .product(name: "Cordova", package: "capacitor-swift-pm"),
-                .product(name: "CapacitorCommunityNativeAudio", package: "CapacitorCommunityNativeAudio"),
-                .product(name: "RevenuecatPurchasesCapacitor", package: "RevenuecatPurchasesCapacitor")
+                .product(name: "CapacitorCommunityNativeAudio", package: "CapacitorCommunityNativeAudio")
             ]
         )
     ]

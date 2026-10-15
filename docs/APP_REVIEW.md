@@ -1,19 +1,8 @@
 # Starta — App Review Information
 
-Answers for the App Store Connect **App Review Information** questions, written against the current build (`js/app.js` with `PAYMENTS_ENABLED = false`). Read **Before you submit** first. Two things in this build will probably get it rejected as it stands.
+Answers for the App Store Connect **App Review Information** questions.
 
----
-
-## Before you submit (open issues)
-
-1. **Pro is unlocked by a code typed into the app, not by In-App Purchase.** With `PAYMENTS_ENABLED = false`, the Pro section shows a "Enter code" field that unlocks paid content with the hardcoded code `STARTAPRO`. Guideline 3.1.1 says apps may not use their own mechanisms to unlock content or functionality, such as license keys or QR codes. Any code-based unlock has to go through App Store **offer codes**, which redeem through StoreKit. Pick one before you submit:
-   - **(Recommended)** Set up the non-consumable in App Store Connect and RevenueCat, put the real public key in `REVENUECAT_API_KEY_IOS`, and set `PAYMENTS_ENABLED = true`. The Unlock and Restore Purchases buttons are already built.
-   - Or ship v1 with every feature free: remove the Pro gating and the code field, and add the purchase in a later update.
-2. **The privacy policy doesn't match the build if purchases are turned on.** `privacy.html` says no third-party services are used. RevenueCat (and Apple StoreKit) handle purchase and anonymous customer IDs. If you enable payments, update the policy and the App Privacy "nutrition label" (Purchases → Purchase History, not linked to identity, not used for tracking).
-3. **"Got a code?" / TRACKCLUB theme.** The `CHUCK` code unlocks a hidden cosmetic theme. Because it isn't paid content it's less risky, but App Review flags hidden features (2.3.1) unless you disclose them. The notes below disclose it.
-4. `UIRequiredDeviceCapabilities` in `ios/App/App/Info.plist` lists `armv7`, which is a Capacitor template leftover. Change it to `arm64` (or delete the key) so App Store Connect doesn't flag or restrict the build.
-
-The answers below assume you take option 1 above, the real In-App Purchase. Notes in brackets show where the wording changes if you pick the other option.
+**Status:** build 1.0 (7) was rejected on October 15, 2026 under Guideline 3.1.1 because Starta Pro (`STARTAPRO`) and the TRACKCLUB theme (`CHUCK`) were unlocked with codes. The next build fixes this. Both codes, the Starta Pro section, the "Got a code?" box, the lock icons, and the RevenueCat purchase SDK are gone, and every theme and sound is free for everyone. The reply to Apple is in **Reply to App Review** at the bottom.
 
 ---
 
@@ -35,10 +24,8 @@ The answers below assume you take option 1 above, the real In-App Purchase. Note
 5. **Sound.** Tap + or – on the volume. Pick a different start sound (Air horn, for example) and tap Test.
 6. **Timing.** Tap a preset like Quick or Official, then tap + or – on one of the Min/Max numbers.
 7. **Head start.** Turn on Head start. Close Settings with the X and tap START to show the two signals.
-8. **Themes.** Open Settings again. Tap a couple of color themes and try the custom color picker.
-9. **Starta Pro code.** Tap a locked theme so Settings jumps to Starta Pro. Type STARTAPRO, tap Redeem, and show the locks disappearing. Pick an unlocked sound and tap Test.
-10. **Bonus theme.** Scroll to "Got a code?", type CHUCK, tap Redeem, and pick the TRACKCLUB theme.
-11. **Finish.** Tap Reset to defaults, close Settings, and stop the recording.
+8. **Themes.** Open Settings again. Tap a couple of color themes (including TRACKCLUB) and try the custom color picker.
+9. **Finish.** Tap Reset to defaults, close Settings, and stop the recording.
 
 **After recording**
 - The video saves to your Photos app. Trim the start and end if you want, but don't cut anything out of the middle.
@@ -65,9 +52,7 @@ The app has no accounts, no posts or chat between users, and no purchases. So th
 >
 > Everything else is behind the gear icon in the top right. From there you can change the volume, pick a different start sound (the Test button lets you hear it), adjust the timing or tap one of the presets, turn on Head start, and pick a color theme.
 >
-> Some themes and sounds have a lock on them. That's Starta Pro, and it isn't paid. There's no purchase anywhere in the app, and the code is never sold. Pro is just unlocked with a free code: in Settings, go to the Starta Pro section, type STARTAPRO, and tap Redeem. That unlocks all the color themes, the custom color picker, and the extra start sounds (air horn, whistle, duck quack, cartoon boing, goat bleat, and two voice signals).
->
-> At the bottom of Settings there's a separate "Got a code?" box. Typing CHUCK unlocks a free bonus theme called TRACKCLUB that I made for our local team. It's just a color, and it's free.
+> Everything in the app is free. There are no purchases, no locked features, and no codes to enter.
 >
 > There are no user accounts and nothing users can post or share, so the app has no sign-up, login, account deletion, or reporting/blocking features.
 
@@ -84,3 +69,23 @@ The app has no accounts, no posts or chat between users, and no purchases. So th
 ## 6. Regulated industry / third-party material
 
 > This doesn't apply to Starta. It isn't a health, finance, gambling, or other regulated app, and it doesn't use anyone else's copyrighted or trademarked material. I made all the sounds myself, and the artwork is my own.
+
+---
+
+## Reply to App Review (build 1.0 (7) rejection)
+
+> Hello,
+>
+> Thank you for the review. I've fixed the Guideline 3.1.1 issue in the new build.
+>
+> Starta Pro and the TRACKCLUB theme were never sold. They were unlocked with free codes that I shared with friends and our local track team. I understand that unlocking content with my own codes isn't allowed, even when it's free, so I removed both. The new build has no codes, no code entry fields, no locked content, and no purchase code of any kind. Every theme, sound, and feature is now available to everyone for free.
+>
+> Answers to your questions:
+>
+> 1. Who are the users that will use the paid features in the app? There are no paid features. Every feature is free for every user.
+> 2. Where can users purchase the features that can be accessed in the app? Nowhere. Nothing in the app is sold, inside or outside the app.
+> 3. What specific types of previously purchased features can a user access in the app? None. Nothing has ever been sold, so there are no previously purchased features.
+> 4. What paid content, subscriptions, or features are unlocked within the app that do not use In-App Purchase? None. The free code unlocks were removed in this build, and all content is open to everyone.
+> 5. How do users obtain the "Starta Pro" redeem code? The code was never sold. I shared it for free with friends and our local track team. It has been removed from the app, and the app no longer accepts any codes.
+>
+> Thank you!
