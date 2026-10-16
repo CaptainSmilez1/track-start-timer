@@ -41,12 +41,12 @@ The app has no accounts, no posts or chat between users, and no purchases. So th
 
 **What Apple needs**
 - **iPhone 6.9" screenshots are required:** 1320 × 2868 or 1290 × 2796 pixels, portrait. App Store Connect scales them down for smaller iPhones.
-- **iPad 13" screenshots are also required right now** (2064 × 2752 or 2048 × 2732), because the Xcode project is set to run on iPad too (`TARGETED_DEVICE_FAMILY = "1,2"`). To skip iPad, change the target to iPhone only before you upload the next build.
+- **No iPad screenshots needed.** The app is set to iPhone only.
 - Upload 3 to 10 per device, as PNG or JPG. They must show the real app in use, not just the launch screen.
 
 **How to take them**
 - If your phone is a Pro Max or Plus model, take them on the phone (Side button + Volume Up).
-- If not, use the Xcode Simulator on an **iPhone 17 Pro Max** (and an **iPad Pro 13-inch** if you keep iPad). Press Cmd-S to save a full-size screenshot to your Desktop. The physical-device rule only applies to the review recording, not store screenshots.
+- If not, use the Xcode Simulator on an **iPhone 17 Pro Max**. Press Cmd-S to save a full-size screenshot to your Desktop. The physical-device rule only applies to the review recording, not store screenshots.
 - Before you start, charge the phone or set the Simulator to a clean status bar, and pick the theme you want people to see first.
 
 **Shot list**
