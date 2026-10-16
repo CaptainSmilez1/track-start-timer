@@ -6,6 +6,8 @@ Everything to paste into App Store Connect → your app → the 1.0 version page
 
 Upload `appstore/screenshots/starta-1.png` through `starta-7.png` in this order. They're 1320 × 2868. The first three show in search results.
 
+If App Store Connect asks for the 6.1" or 6.3" display instead, use the same 7 from `appstore/screenshots-6.3/` (1206 × 2622).
+
 1. Your pocket race starter
 2. Pick a color
 3. No more guessing the gun
