@@ -272,6 +272,7 @@
 
   function openPanel(){ body.classList.add("settings-open"); }
   function closePanel(){
+    closeSoundMenu();
     body.classList.remove("settings-open");
     blankLaunchElements(); /* blank immediately so the screen the panel reveals as it slides away is empty */
     setTimeout(replayLaunchAnimation, 320); /* then replay once the panel's finished sliding away */
@@ -345,16 +346,42 @@
     }, { passive: true });
   })();
 
-  /* sound select */
-  const soundSel = el("soundSel");
+  /* sound picker — an in-app menu, since iOS's native <select> list can't be
+     styled to match the rest of the UI */
+  const soundPicker = el("soundPicker"), soundBtn = el("soundBtn"), soundMenu = el("soundMenu");
+  const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
   Object.keys(SOUNDS).forEach(function(key){
-    const o = document.createElement("option");
-    o.value = key; o.textContent = SOUNDS[key].label;
-    soundSel.appendChild(o);
+    const opt = document.createElement("button");
+    opt.type = "button"; opt.className = "picker-opt"; opt.dataset.sound = key;
+    opt.setAttribute("role", "option");
+    opt.innerHTML = "<span>" + SOUNDS[key].label + "</span>" + ICON_CHECK;
+    opt.addEventListener("click", function(){
+      S.sound = key; saveSettings(); updateConfigLine(); renderSoundPicker();
+      closeSoundMenu();
+      unlockAudio(S.sound); SOUNDS[S.sound].play();
+    });
+    soundMenu.appendChild(opt);
   });
-  soundSel.addEventListener("change", function(){
-    S.sound = soundSel.value; saveSettings(); updateConfigLine();
-    unlockAudio(S.sound); SOUNDS[S.sound].play();
+  function renderSoundPicker(){
+    el("soundBtnLabel").textContent = SOUNDS[S.sound].label;
+    soundMenu.querySelectorAll(".picker-opt").forEach(function(o){
+      o.setAttribute("aria-selected", o.dataset.sound === S.sound ? "true" : "false");
+    });
+  }
+  function closeSoundMenu(){
+    soundMenu.hidden = true;
+    soundBtn.setAttribute("aria-expanded", "false");
+  }
+  soundBtn.addEventListener("click", function(){
+    const open = soundMenu.hidden;
+    soundMenu.hidden = !open;
+    soundBtn.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+  document.addEventListener("pointerdown", function(e){
+    if(!soundMenu.hidden && !soundPicker.contains(e.target)) closeSoundMenu();
+  });
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape" && !soundMenu.hidden){ closeSoundMenu(); soundBtn.focus(); }
   });
   el("testBtn").addEventListener("click", function(){
     unlockAudio(S.sound); SOUNDS[S.sound].play();
@@ -535,7 +562,7 @@
 
   function syncInputs(){
     renderVol();
-    soundSel.value = S.sound;
+    renderSoundPicker();
     renderMarks();
     renderSet();
     hsToggle.checked = S.headStart;

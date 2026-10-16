@@ -12,11 +12,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
        the starter sound that fires right after noticeably quieter than the
        same sound played directly (e.g. from the Test button, which never
        speaks first). Forcing the session back to a plain .playback category
-       — not mixed/ducked — restores full volume for native audio. */
+       — not mixed/ducked — restores full volume for native audio.
+       Runs on its own serial queue: AVAudioSession calls can block, and
+       Xcode flags them as a hang risk when made on the main thread. */
+    private let audioSessionQueue = DispatchQueue(label: "starta.audio-session", qos: .userInitiated)
     private func activateFullVolumeAudioSession() {
-        let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, options: [])
-        try? session.setActive(true)
+        audioSessionQueue.async {
+            let session = AVAudioSession.sharedInstance()
+            try? session.setCategory(.playback, options: [])
+            try? session.setActive(true)
+        }
     }
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
