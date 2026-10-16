@@ -289,10 +289,23 @@ body.settings-open #closeBtn{ display:flex; align-items:center; justify-content:
   font-weight:900; font-size:1rem; letter-spacing:.01em;
 }
 .stepper-val small{ font-size:.62em; font-weight:700; color:var(--muted); margin-left:1px; }
+/* the sound picker styled as the same pill as the steppers (height, radius,
+   inset shading, heavy type) instead of the browser's default dropdown;
+   the native arrow is replaced by an accent chevron */
+.select-wrap{ position:relative; flex:1; min-width:0; display:flex; }
 select{
-  flex:1; min-width:0; padding:12px; font-size:1rem; font-family:inherit;
-  background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:10px;
+  -webkit-appearance:none; appearance:none;
+  flex:1; min-width:0; height:42px; padding:0 40px 0 14px;
+  font-family:inherit; font-size:1rem; font-weight:800; letter-spacing:.01em;
+  background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:11px;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.15); cursor:pointer;
 }
+select:focus{ outline:none; border-color:var(--accent); }
+.select-chevron{
+  position:absolute; right:12px; top:50%; width:18px; height:18px;
+  transform:translateY(-50%); color:var(--accent); pointer-events:none;
+}
+#testBtn{ height:42px; padding:0 18px; border-radius:11px; font-weight:800; }
 .btn{
   padding:12px 18px; border-radius:10px; border:1px solid var(--line);
   background:var(--panel); color:var(--fg); font-family:inherit; font-size:.95rem; font-weight:700; cursor:pointer;
