@@ -76,3 +76,13 @@ track,sprint,starter,pistol,race,start,timer,reaction,blocks,coach,running,athle
 - **Price:** Free
 - **Privacy:** Data Not Collected
 - **Privacy Policy URL:** the GitHub Pages link to `privacy.html`
+
+## Header and search results artwork (iOS 27+)
+
+In App Store Connect, upload these under the version's creative assets. None of them have transparency.
+
+- **Product page header:** `appstore/creative/header-21x9.png` (3840 × 1646, 21:9)
+- **Search results:** `appstore/creative/search-3x2.png` (3840 × 2560, 3:2)
+- **One file for both:** `appstore/creative/universal-16x9.png` (5244 × 2950, 16:9). Use it if you'd rather upload once and turn on "Use header asset in search results."
+
+Check each one in App Store Connect's Preview before you submit, to make sure nothing important sits under the app name or the Get button.
