@@ -289,22 +289,48 @@ body.settings-open #closeBtn{ display:flex; align-items:center; justify-content:
   font-weight:900; font-size:1rem; letter-spacing:.01em;
 }
 .stepper-val small{ font-size:.62em; font-weight:700; color:var(--muted); margin-left:1px; }
-/* the sound picker styled as the same pill as the steppers (height, radius,
-   inset shading, heavy type) instead of the browser's default dropdown;
-   the native arrow is replaced by an accent chevron */
+/* the sound picker: an in-app menu instead of a native <select>, because iOS
+   draws the native option list itself (light system popup) and it can't be
+   styled to match. The closed button is the same pill as the steppers. */
 .select-wrap{ position:relative; flex:1; min-width:0; display:flex; }
-select{
-  -webkit-appearance:none; appearance:none;
-  flex:1; min-width:0; height:42px; padding:0 40px 0 14px;
+/* lift the Sound card above the cards after it, so its open menu isn't
+   painted underneath them */
+#soundSection{ position:relative; z-index:5; }
+.picker-btn{
+  flex:1; min-width:0; height:42px; padding:0 40px 0 14px; position:relative;
+  display:flex; align-items:center; text-align:left;
   font-family:inherit; font-size:1rem; font-weight:800; letter-spacing:.01em;
   background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:11px;
   box-shadow:inset 0 1px 3px rgba(0,0,0,.15); cursor:pointer;
 }
-select:focus{ outline:none; border-color:var(--accent); }
+.picker-btn span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.picker-btn:focus{ outline:none; }
+.picker-btn[aria-expanded="true"]{ border-color:var(--accent); }
 .select-chevron{
   position:absolute; right:12px; top:50%; width:18px; height:18px;
   transform:translateY(-50%); color:var(--accent); pointer-events:none;
+  transition:transform .18s ease;
 }
+.picker-btn[aria-expanded="true"] .select-chevron{ transform:translateY(-50%) rotate(180deg); }
+.picker-menu{
+  position:absolute; top:calc(100% + 6px); left:0; right:0; z-index:20;
+  display:flex; flex-direction:column; gap:2px; padding:6px;
+  background:var(--panel); border:1px solid var(--line); border-radius:14px;
+  box-shadow:0 12px 32px rgba(0,0,0,.45);
+  animation:pickerIn .14s ease-out;
+}
+.picker-menu[hidden]{ display:none; }
+@keyframes pickerIn{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
+.picker-opt{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  width:100%; min-height:42px; padding:0 12px; border:none; border-radius:9px;
+  background:transparent; color:var(--fg); text-align:left; cursor:pointer;
+  font-family:inherit; font-size:1rem; font-weight:800; letter-spacing:.01em;
+}
+.picker-opt:active, .picker-opt:hover{ background:var(--line); }
+.picker-opt svg{ width:18px; height:18px; color:var(--accent); flex:0 0 auto; visibility:hidden; }
+.picker-opt[aria-selected="true"]{ color:var(--accent); }
+.picker-opt[aria-selected="true"] svg{ visibility:visible; }
 #testBtn{ height:42px; padding:0 18px; border-radius:11px; font-weight:800; }
 .btn{
   padding:12px 18px; border-radius:10px; border:1px solid var(--line);
