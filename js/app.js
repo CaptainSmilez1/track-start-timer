@@ -7,9 +7,7 @@
     marksMin: 4, marksMax: 7,
     setMin: 1.5, setMax: 2.6,
     headStart: false, headGap: 3,
-    customAccent: "#c8451f",
-    proRedeemed: false,
-    hazardRedeemed: false
+    customAccent: "#c8451f"
   };
   let S = Object.assign({}, DEFAULTS);
 
@@ -274,7 +272,6 @@
 
   function openPanel(){ body.classList.add("settings-open"); }
   function closePanel(){
-    cancelPromoRemoval();
     body.classList.remove("settings-open");
     blankLaunchElements(); /* blank immediately so the screen the panel reveals as it slides away is empty */
     setTimeout(replayLaunchAnimation, 320); /* then replay once the panel's finished sliding away */
@@ -303,7 +300,7 @@
 
   /* opens the panel at the top, then scrolls down to center a given
      setting (no motion at all if it's already at/near the top) — shared by
-     the config-summary chips and by tapping a locked Pro theme/sound */
+     the config-summary chips */
   function openPanelAndScrollTo(dest){
     if(!dest) return;
     /* only snap to top before the animated scroll if the panel was closed
@@ -356,11 +353,6 @@
     soundSel.appendChild(o);
   });
   soundSel.addEventListener("change", function(){
-    if(isSoundLocked(soundSel.value)){
-      soundSel.value = S.sound; /* revert the native select's own selection */
-      presentPaywall();
-      return;
-    }
     S.sound = soundSel.value; saveSettings(); updateConfigLine();
     unlockAudio(S.sound); SOUNDS[S.sound].play();
   });
@@ -448,150 +440,6 @@
     updateConfigLine(); saveSettings();
   });
 
-  /* ---------- Starta Pro (in-app purchase) ----------
-     A single non-consumable unlock (all themes + custom color + the full
-     sound pack) via RevenueCat wrapping native StoreKit — native-only, the
-     free web version never gates anything since StoreKit doesn't exist in
-     a browser and this app has always been free there. Apple requires any
-     purchase that unlocks content/features used inside the app to go
-     through their own purchase system (App Store Review Guideline 3.1.1);
-     Stripe or any other processor isn't allowed for this. */
-  const FREE_THEMES = ["track"];
-  const FREE_SOUNDS = ["bang", "buzzer"];
-  const PRO_ENTITLEMENT_ID = "pro";
-  const REVENUECAT_API_KEY_IOS = "YOUR_REVENUECAT_PUBLIC_IOS_API_KEY"; /* set from the RevenueCat dashboard before shipping */
-  /* RevenueCat isn't configured yet (placeholder key above) — rather than
-     ship a purchase button that silently can't work, this release unlocks
-     Pro via a redemption code instead. Once RevenueCat is set up for real,
-     flip this to true and the purchase UI (already built below) takes
-     over automatically — nothing else to change. */
-  const PAYMENTS_ENABLED = false;
-  const PRO_REDEEM_CODE = "STARTAPRO";
-  /* Hazard is its own separate secret, independent of Starta Pro entirely —
-     hidden from the theme grid until its own distinct code is redeemed,
-     not just locked-and-visible like the rest of the Pro bundle */
-  const HAZARD_REDEEM_CODE = "CHUCK";
-  const Purchases = isNative && window.Capacitor.Plugins ? window.Capacitor.Plugins.Purchases : null;
-  const ICON_LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
-  let isPro = false;
-  let proPackage = null; /* cached purchasable package, for price display + purchasing */
-  if(isNative) body.classList.add("native");
-
-  /* hazard is never part of the Starta Pro lock/paywall — it's excluded
-     here because by the time its swatch exists in the DOM at all, it's
-     already been unlocked via its own separate secret code */
-  function isThemeLocked(name){ return name !== "hazard" && isNative && !isPro && FREE_THEMES.indexOf(name) === -1; }
-  function isSoundLocked(key){ return isNative && !isPro && FREE_SOUNDS.indexOf(key) === -1; }
-  function presentPaywall(){ if(isNative) openPanelAndScrollTo(el("proSection")); }
-
-  function lockBadge(container){
-    let badge = container.querySelector(".lock-badge");
-    if(!badge){
-      badge = document.createElement("span");
-      badge.className = "lock-badge"; badge.innerHTML = ICON_LOCK;
-      container.appendChild(badge);
-    }
-    return badge;
-  }
-
-  function renderProGates(){
-    themesWrap.querySelectorAll(".theme-option").forEach(function(opt){
-      const locked = isThemeLocked(opt.dataset.theme);
-      opt.classList.toggle("locked", locked);
-      const swatch = opt.querySelector(".swatch");
-      if(locked) lockBadge(swatch);
-      else{ const b = swatch.querySelector(".lock-badge"); if(b) b.remove(); }
-    });
-    const customLocked = isNative && !isPro;
-    customColorRow.classList.toggle("locked", customLocked);
-    const swatchEl = el("customColorSwatch");
-    if(customLocked) lockBadge(swatchEl);
-    else{ const b = swatchEl.querySelector(".lock-badge"); if(b) b.remove(); }
-
-    Array.prototype.forEach.call(soundSel.options, function(o){
-      o.textContent = SOUNDS[o.value].label + (isSoundLocked(o.value) ? " (Pro)" : "");
-    });
-
-    el("proStatus").hidden = !isPro;
-    el("proUnlockBtn").hidden = !PAYMENTS_ENABLED || isPro;
-    el("proRestoreBtn").hidden = !PAYMENTS_ENABLED || isPro;
-    el("proCodeRow").hidden = PAYMENTS_ENABLED || isPro;
-    syncPromoRemoveBtn();
-  }
-
-  const proCodeInput = el("proCodeInput");
-  el("proRedeemBtn").addEventListener("click", function(){
-    const entered = (proCodeInput.value || "").trim().toUpperCase();
-    const codeError = el("proCodeError");
-    if(entered && entered === PRO_REDEEM_CODE){
-      isPro = true; S.proRedeemed = true; saveSettings();
-      codeError.hidden = true;
-      proCodeInput.value = "";
-      renderProGates();
-    }else{
-      codeError.hidden = false;
-    }
-  });
-
-  /* Hazard's own separate secret — a distinct code from Starta Pro's,
-     unlocking just this one theme rather than the whole bundle */
-  const hazardCodeInput = el("hazardCodeInput");
-  el("hazardRedeemBtn").addEventListener("click", function(){
-    const entered = (hazardCodeInput.value || "").trim().toUpperCase();
-    const codeError = el("hazardCodeError");
-    if(entered && entered === HAZARD_REDEEM_CODE){
-      S.hazardRedeemed = true; saveSettings();
-      addThemeSwatch("hazard");
-      codeError.hidden = true;
-      hazardCodeInput.value = "";
-      el("hazardStatus").hidden = false;
-      el("hazardCodeRow").hidden = true;
-      syncPromoRemoveBtn();
-    }else{
-      codeError.hidden = false;
-    }
-  });
-
-  function initPurchases(){
-    if(!PAYMENTS_ENABLED || !Purchases) return;
-    Purchases.configure({ apiKey: REVENUECAT_API_KEY_IOS })
-      .then(function(){ return Purchases.getCustomerInfo(); })
-      .then(function(res){
-        const info = res && res.customerInfo;
-        isPro = !!(info && info.entitlements && info.entitlements.active && info.entitlements.active[PRO_ENTITLEMENT_ID]);
-        renderProGates();
-      })
-      .catch(function(){ /* offline or not yet configured — stays locked, no crash */ });
-    Purchases.getOfferings().then(function(res){
-      const offering = res && res.offerings && res.offerings.current;
-      const pkg = offering && offering.availablePackages && offering.availablePackages[0];
-      if(pkg){
-        proPackage = pkg;
-        el("proPrice").textContent = (pkg.product && pkg.product.priceString) || "";
-      }
-    }).catch(function(){});
-  }
-
-  el("proUnlockBtn").addEventListener("click", function(){
-    if(!Purchases || !proPackage) return;
-    Purchases.purchasePackage({
-      packageIdentifier: proPackage.identifier,
-      offeringIdentifier: proPackage.offeringIdentifier
-    }).then(function(res){
-      const info = res && res.customerInfo;
-      isPro = !!(info && info.entitlements && info.entitlements.active && info.entitlements.active[PRO_ENTITLEMENT_ID]);
-      renderProGates();
-    }).catch(function(){ /* user cancelled, or purchase failed — nothing to do */ });
-  });
-  el("proRestoreBtn").addEventListener("click", function(){
-    if(!Purchases) return;
-    Purchases.restorePurchases().then(function(res){
-      const info = res && res.customerInfo;
-      isPro = !!(info && info.entitlements && info.entitlements.active && info.entitlements.active[PRO_ENTITLEMENT_ID]);
-      renderProGates();
-    }).catch(function(){});
-  });
-
   /* themes */
   const THEMES = {
     track:    { color: "#c8451f", label: "Track" },
@@ -600,7 +448,7 @@
     field:    { color: "#34d399", label: "Field" },
     sunset:   { color: "#fb923c", label: "Sunset" },
     daylight: { color: "#f4f6fb", label: "Daylight" },
-    hazard:   { color: "#f4c81a", label: "TRACKCLUB" }
+    hazard:   { color: "#f4c81a", label: "Hazard" }
   };
   const themesWrap = el("themes");
   function addThemeSwatch(name){
@@ -611,16 +459,12 @@
     opt.setAttribute("aria-label", t.label + " theme");
     opt.innerHTML = '<span class="swatch" style="background:' + t.color + '"></span><span class="theme-name">' + t.label + "</span>";
     opt.addEventListener("click", function(){
-      if(isThemeLocked(name)){ presentPaywall(); return; }
       S.theme = name; applyTheme(); saveSettings();
     });
     themesWrap.appendChild(opt);
     return opt;
   }
-  Object.keys(THEMES).forEach(function(name){
-    if(name === "hazard") return; /* settings haven't loaded yet here — added later in init if already redeemed */
-    addThemeSwatch(name);
-  });
+  Object.keys(THEMES).forEach(addThemeSwatch);
   /* readable text color for a given background — plain luminance heuristic,
      no need for full sRGB gamma correction at this scale */
   function contrastInk(hex){
@@ -634,12 +478,6 @@
   const customColorRow = el("customColorRow");
   const customColorHex = el("customColorHex");
   const customColorSwatch = el("customColorSwatch");
-  /* the label's default action opens the native color picker — intercept
-     that with preventDefault() while locked, same idea as the theme/sound
-     gates, instead of letting it open then having to undo a color pick */
-  customColorSwatch.addEventListener("click", function(e){
-    if(isNative && !isPro){ e.preventDefault(); presentPaywall(); }
-  });
   customColorInput.addEventListener("input", function(){
     S.theme = "custom"; S.customAccent = customColorInput.value;
     applyTheme(); saveSettings();
@@ -663,64 +501,10 @@
   }
 
   /* reset */
-  /* reset only touches settings — redeemed promo codes are kept; removing
-     those is its own deliberate action below */
   el("resetBtn").addEventListener("click", function(){
-    S = Object.assign({}, DEFAULTS, { proRedeemed: S.proRedeemed, hazardRedeemed: S.hazardRedeemed });
-    syncInputs(); applyTheme(); updateConfigLine(); renderProGates(); saveSettings();
+    S = Object.assign({}, DEFAULTS);
+    syncInputs(); applyTheme(); updateConfigLine(); saveSettings();
   });
-
-  /* remove promos — deliberately slow: a 3 second wait, then typing "delete" */
-  const PROMO_WAIT_SECONDS = 3;
-  let promoTimer = null;
-  function hasPromos(){ return !!(S.proRedeemed || S.hazardRedeemed); }
-  function syncPromoRemoveBtn(){
-    el("removePromosBtn").hidden = !el("removePromosConfirm").hidden || !hasPromos();
-  }
-  function cancelPromoRemoval(){
-    clearInterval(promoTimer); promoTimer = null;
-    el("removePromosConfirm").hidden = true;
-    el("removePromosInput").value = "";
-    el("removePromosInput").disabled = true;
-    el("removePromosConfirmBtn").disabled = true;
-    syncPromoRemoveBtn();
-  }
-  function startPromoRemoval(){
-    const input = el("removePromosInput"), hint = el("removePromosHint");
-    const base = "This removes any redeemed promo codes — Starta Pro and the hidden theme lock again until you re-enter the codes. ";
-    let left = PROMO_WAIT_SECONDS;
-    input.value = ""; input.disabled = true;
-    el("removePromosConfirmBtn").disabled = true;
-    el("removePromosConfirm").hidden = false;
-    syncPromoRemoveBtn();
-    hint.textContent = base + "Please wait " + left + "…";
-    promoTimer = setInterval(function(){
-      left--;
-      if(left > 0){ hint.textContent = base + "Please wait " + left + "…"; return; }
-      clearInterval(promoTimer); promoTimer = null;
-      hint.textContent = base + 'Type "delete" to confirm.';
-      input.disabled = false; input.focus();
-    }, 1000);
-  }
-  function removePromos(){
-    S.proRedeemed = false; S.hazardRedeemed = false;
-    isPro = false;
-    const hazardSwatch = themesWrap.querySelector('[data-theme="hazard"]');
-    if(hazardSwatch) hazardSwatch.remove();
-    el("hazardCodeRow").hidden = false;
-    el("hazardStatus").hidden = true;
-    /* don't leave a now-locked theme or sound selected */
-    if(S.theme === "hazard" || isThemeLocked(S.theme)) S.theme = DEFAULTS.theme;
-    if(isSoundLocked(S.sound)) S.sound = DEFAULTS.sound;
-    cancelPromoRemoval();
-    syncInputs(); applyTheme(); updateConfigLine(); renderProGates(); saveSettings();
-  }
-  el("removePromosBtn").addEventListener("click", startPromoRemoval);
-  el("removePromosCancelBtn").addEventListener("click", cancelPromoRemoval);
-  el("removePromosInput").addEventListener("input", function(){
-    el("removePromosConfirmBtn").disabled = el("removePromosInput").value.trim().toLowerCase() !== "delete";
-  });
-  el("removePromosConfirmBtn").addEventListener("click", removePromos);
 
   /* config summary on the main screen — compact icon chips instead of a sentence */
   /* each icon's artwork is nudged via an inner <g transform> so its inked
@@ -762,16 +546,8 @@
   /* ---------- init ---------- */
   loadSettings().then(function(){
     if(!SOUNDS[S.sound]) S.sound = DEFAULTS.sound; /* a saved sound that's since been removed (e.g. Yeehaw, Voice "Go!") */
-    if(S.hazardRedeemed){
-      addThemeSwatch("hazard"); /* before applyTheme, so its active state renders correctly */
-      el("hazardCodeRow").hidden = true;
-      el("hazardStatus").hidden = false;
-    }
     syncInputs(); applyTheme(); updateConfigLine();
     applyNativeVolumes(); /* the initial call above ran before settings loaded, so the real saved volume wasn't applied yet */
-    if(S.proRedeemed) isPro = true; /* code-redeemed unlock persists across launches */
-    renderProGates(); /* dims locked themes/sounds immediately, before the purchase check returns */
-    initPurchases();
   });
 
   /* ---------- PWA service worker ---------- */
