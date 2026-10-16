@@ -88,3 +88,10 @@ In App Store Connect, upload these under the version's creative assets. None of 
 - **One file for both:** `appstore/creative/universal-16x9.png` (5244 × 2950, 16:9). Use it if you'd rather upload once and turn on "Use header asset in search results."
 
 Check each one in App Store Connect's Preview before you submit, to make sure nothing important sits under the app name or the Get button.
+
+### Animated versions
+
+- **Header video:** `appstore/creative/starta-header.mp4` (3840 × 1646, 30 fps, 10 s)
+- **Search results video:** `appstore/creative/starta-search.mp4` (3840 × 2560, 30 fps, 10 s)
+
+Both play a start (Ready → On your marks → Set → GO!) and loop. The starter gun sound fires at GO!. Search results are always muted, and the header plays muted until someone turns the sound on.
