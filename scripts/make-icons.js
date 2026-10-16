@@ -80,6 +80,63 @@ function makeIcon(size, { maskable = false } = {}) {
   return png;
 }
 
+/* ---- native iOS app icon + launch splash ----
+   Smooth (anti-aliased) edges via signed distance: each pixel's coverage is
+   how far its center sits inside the shape, clamped to one pixel of blend.
+   Both are written as opaque RGB — App Store Connect rejects an app icon
+   with an alpha channel, and iOS applies its own rounded mask to icons. */
+const ACCENT = [200, 69, 31];   /* --accent, track theme */
+const APP_BG = [16, 20, 24];    /* --bg, so launch flows into the dark app */
+const WHITE = [255, 255, 255];
+
+function encodeRGB(w, h, colorAt){
+  const raw = Buffer.alloc((w * 3 + 1) * h);
+  let p = 0;
+  for(let y = 0; y < h; y++){
+    raw[p++] = 0;
+    for(let x = 0; x < w; x++){
+      const c = colorAt(x + 0.5, y + 0.5);
+      raw[p++] = c[0]; raw[p++] = c[1]; raw[p++] = c[2];
+    }
+  }
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4);
+  ihdr[8] = 8; ihdr[9] = 2; /* color type RGB, no alpha */
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk("IHDR", ihdr), chunk("IDAT", zlib.deflateSync(raw)), chunk("IEND", Buffer.alloc(0)),
+  ]);
+}
+const mix = (a, b, t) => [0, 1, 2].map(i => Math.round(a[i] + (b[i] - a[i]) * t));
+const cover = d => Math.max(0, Math.min(1, 0.5 - d)); /* d: px outside the edge (negative = inside) */
+function roundedBoxSDF(x, y, cx, cy, half, r){
+  const qx = Math.abs(x - cx) - (half - r), qy = Math.abs(y - cy) - (half - r);
+  return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0) - r;
+}
+
+function makeAppIcon(size){
+  const c = size / 2, r = size * 0.34;
+  return encodeRGB(size, size, (x, y) => mix(ACCENT, WHITE, cover(Math.hypot(x - c, y - c) - r)));
+}
+
+/* the same rounded-square logo the web icon uses, centered on the app's
+   dark background */
+function makeSplash(size, logo){
+  const c = size / 2, half = logo / 2, corner = logo * 0.18, r = logo * 0.34;
+  return encodeRGB(size, size, (x, y) => {
+    let col = mix(APP_BG, ACCENT, cover(roundedBoxSDF(x, y, c, c, half, corner)));
+    return mix(col, WHITE, cover(Math.hypot(x - c, y - c) - r));
+  });
+}
+
+const iosAssets = path.join(__dirname, "..", "ios", "App", "App", "Assets.xcassets");
+fs.writeFileSync(path.join(iosAssets, "AppIcon.appiconset", "AppIcon-512@2x.png"), makeAppIcon(1024));
+const splash = makeSplash(2732, 420);
+for(const name of ["splash-2732x2732.png", "splash-2732x2732-1.png", "splash-2732x2732-2.png"]){
+  fs.writeFileSync(path.join(iosAssets, "Splash.imageset", name), splash);
+}
+console.log("iOS app icon + splash written to", iosAssets);
+
 const outDir = path.join(__dirname, "..", "icons");
 fs.mkdirSync(outDir, { recursive: true });
 fs.writeFileSync(path.join(outDir, "icon-192.png"), makeIcon(192));
