@@ -448,7 +448,7 @@
     field:    { color: "#34d399", label: "Field" },
     sunset:   { color: "#fb923c", label: "Sunset" },
     daylight: { color: "#f4f6fb", label: "Daylight" },
-    hazard:   { color: "#f4c81a", label: "TRACKCLUB" }
+    hazard:   { color: "#f4c81a", label: "Hazard" }
   };
   const themesWrap = el("themes");
   function addThemeSwatch(name){

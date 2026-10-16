@@ -2,7 +2,7 @@
 
 Answers for the App Store Connect **App Review Information** questions.
 
-**Status:** build 1.0 (7) was rejected on October 15, 2026 under Guideline 3.1.1 because Starta Pro (`STARTAPRO`) and the TRACKCLUB theme (`CHUCK`) were unlocked with codes. The next build fixes this. Both codes, the Starta Pro section, the "Got a code?" box, the lock icons, and the RevenueCat purchase SDK are gone, and every theme and sound is free for everyone. The reply to Apple is in **Reply to App Review** at the bottom.
+**Status:** build 1.0 (7) was rejected on October 15, 2026 under Guideline 3.1.1 because Starta Pro (`STARTAPRO`) and the yellow bonus theme (`CHUCK`, now named Hazard) were unlocked with codes. The next build fixes this. Both codes, the Starta Pro section, the "Got a code?" box, the lock icons, and the RevenueCat purchase SDK are gone, and every theme and sound is free for everyone. The reply to Apple is in **Reply to App Review** at the bottom.
 
 ---
 
@@ -25,7 +25,7 @@ Answers for the App Store Connect **App Review Information** questions.
 5. **Sound.** Tap + or – on the volume. Pick a different start sound (Air horn, for example) and tap Test.
 6. **Timing.** Tap a preset like Quick or Official, then tap + or – on one of the Min/Max numbers.
 7. **Head start.** Turn on Head start. Close Settings with the X and tap START to show the two signals.
-8. **Themes.** Open Settings again. Tap a couple of color themes (including TRACKCLUB) and try the custom color picker.
+8. **Themes.** Open Settings again. Tap a couple of color themes (including Hazard) and try the custom color picker.
 9. **Finish.** Tap Reset to defaults, close Settings, and stop the recording.
 
 **After recording**
@@ -84,7 +84,7 @@ Hello,
 
 Thank you for the review. I've fixed the Guideline 3.1.1 issue in the new build.
 
-Starta Pro and the TRACKCLUB theme were never sold. They were unlocked with free codes that I shared with friends and our local track team. I understand that unlocking content with my own codes isn't allowed, even when it's free, so I removed both. The new build has no codes, no code entry fields, no locked content, and no purchase code of any kind. Every theme, sound, and feature is now available to everyone for free.
+Starta Pro and the yellow bonus theme were never sold. They were unlocked with free codes that I shared with friends and our local track team. I understand that unlocking content with my own codes isn't allowed, even when it's free, so I removed both. The new build has no codes, no code entry fields, no locked content, and no purchase code of any kind. Every theme, sound, and feature is now available to everyone for free.
 
 Answers to your questions:
 
