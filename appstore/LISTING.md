@@ -7,11 +7,11 @@ Everything to paste into App Store Connect → your app → the 1.0 version page
 Upload `appstore/screenshots/starta-1.png` through `starta-7.png` in this order. They're 1320 × 2868. The first three show in search results.
 
 1. Your pocket race starter
-2. No more guessing the gun
-3. Set the timing
-4. Choose your sound
-5. Run head starts
-6. Pick a color
+2. Pick a color
+3. No more guessing the gun
+4. Set the timing
+5. Choose your sound
+6. Run head starts
 7. No ads. No account.
 
 ## Name (30 characters max)
