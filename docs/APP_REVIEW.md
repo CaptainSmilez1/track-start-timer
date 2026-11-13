@@ -37,6 +37,34 @@ The app has no accounts, no posts or chat between users, and no purchases. So th
 
 ---
 
+## App Store screenshot guide
+
+**What Apple needs**
+- **iPhone 6.9" screenshots are required:** 1320 × 2868 or 1290 × 2796 pixels, portrait. App Store Connect scales them down for smaller iPhones.
+- **No iPad screenshots needed.** The app is set to iPhone only.
+- Upload 3 to 10 per device, as PNG or JPG. They must show the real app in use, not just the launch screen.
+
+**How to take them**
+- If your phone is a Pro Max or Plus model, take them on the phone (Side button + Volume Up).
+- If not, use the Xcode Simulator on an **iPhone 17 Pro Max**. Press Cmd-S to save a full-size screenshot to your Desktop. The physical-device rule only applies to the review recording, not store screenshots.
+- Before you start, charge the phone or set the Simulator to a clean status bar, and pick the theme you want people to see first.
+
+**Shot list**
+1. **Ready screen.** The main screen with the big START button.
+2. **On your marks.** Tap START and take it while "On your marks" is showing.
+3. **GO!** Take it during the "GO!" flash. This one takes a few tries, so let the start run and press right as it fires.
+4. **Timing settings.** Settings open on the Timing section, showing the presets and Min/Max numbers.
+5. **Sound settings.** The Sound section with the start-signal list open.
+6. **Head start.** Head start on, taken while it shows "Second start in …".
+7. **Themes.** The Appearance section with a non-default theme selected (Hazard or Ocean looks good), or the main screen in that theme.
+
+**Tips**
+- Keep everything English and the same theme across shots 1–6 so they look like a set. Use a different theme for the last one to show it off.
+- No text overlays or device frames are required. Plain screenshots are fine.
+- Upload them in App Store Connect → your app → the version → **Previews and Screenshots**.
+
+---
+
 ## 2–6. Answers (copy everything in the box)
 
 ```

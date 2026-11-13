@@ -1,6 +1,7 @@
 {
   "name": "starta",
   "version": "1.0.0",
+  "private": true,
   "description": "A randomized \"on your marks, set, go\" starter timer for track practice — runs entirely in the browser, installable as an app on phones (PWA).",
   "main": "sw.js",
   "scripts": {
@@ -17,8 +18,8 @@
     "url": "git+https://github.com/CaptainSmilez1/track-start-timer.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "William Evans",
+  "license": "UNLICENSED",
   "type": "commonjs",
   "bugs": {
     "url": "https://github.com/CaptainSmilez1/track-start-timer/issues"

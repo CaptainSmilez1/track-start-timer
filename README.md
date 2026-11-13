@@ -60,3 +60,7 @@ This copies the web app into `www/` (gitignored, regenerated every time — neve
 4. Build/run from Xcode. You'll need a paid Apple Developer account ($99/yr) to run on a physical device or submit to the App Store.
 
 I can't build or test the iOS side myself (no Mac/Xcode here) — steps above are as far as I can verify without one. Play Console listing is a one-time $25 fee, separate from the $99/yr Apple fee.
+
+## License
+
+Copyright © 2026 William Evans. All rights reserved. See `LICENSE`. This code isn't open source.
